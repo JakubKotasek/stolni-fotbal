@@ -4,82 +4,260 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Stolní fotbal – Liga</title>
 <style>
-:root{color-scheme:dark;--bg:#081525;--panel:#0d2034;--line:#203b57;--text:#eef5ff;--muted:#a9bfd9;--blue:#1677f9;--green:#25c45a;--yellow:#f5c928}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#071321,#0b1c30 60%,#071321);font:15px system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text)}
+:root{color-scheme:dark;--bg:#081525;--panel:#0d2034;--line:#203b57;--text:#eef5ff;--muted:#a9bfd9;--blue:#1677f9;--red:#e0465e;--yellow:#f5c928}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#071321,#0b1c30 60%,#071321);font:15px system-ui,-apple-system,sans-serif;color:var(--text)}
 header{padding:22px 26px;border-bottom:1px solid var(--line);display:flex;gap:15px;align-items:center;flex-wrap:wrap;background:#0b1b2d}
 .logo{font-size:30px}h1{font-size:clamp(22px,3vw,32px);margin:0}header p{margin:4px 0 0;color:var(--muted)}.meta{margin-left:auto;color:var(--muted)}
-nav{display:flex;gap:8px;padding:12px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-nav button,.btn{border:1px solid #31516f;background:#122941;color:var(--text);padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:650}
+nav{display:flex;gap:8px;padding:12px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap;background:#0a1a2a;position:sticky;top:0;z-index:10}
+nav button,.btn{border:1px solid #31516f;background:#122941;color:var(--text);padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:650;transition:0.2s}
 nav button.active,.btn.primary{background:var(--blue);border-color:var(--blue)}button:hover{filter:brightness(1.12)}
-main{padding:20px;max-width:1500px;margin:auto}.grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.85fr);gap:18px}.panel{background:linear-gradient(160deg,#0e2237,#0a1a2b);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px}
+.btn.danger{background:var(--red);border-color:var(--red);color:white}
+main{padding:20px;max-width:1500px;margin:auto}.grid{display:grid;gap:18px}.panel{background:linear-gradient(160deg,#0e2237,#0a1a2b);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px}
 .panel h2{font-size:19px;margin:0;padding:15px 18px;border-bottom:1px solid var(--line)}.content{padding:16px}.scroll{overflow:auto}
 table{border-collapse:collapse;width:100%;white-space:nowrap}th,td{text-align:center;padding:9px 10px;border-bottom:1px solid #1c344c}th{background:#11263d;color:#d9e8fb;font-weight:650}td:nth-child(2),th:nth-child(2){text-align:left}tbody tr:hover{background:#142b42}.rank{display:inline-grid;place-items:center;width:25px;height:25px;border-radius:50%;font-weight:800;background:#1976ed;color:white}.rank.r1{background:#25bd53}.rank.r2{background:#1677f9}.rank.r3{background:#f49a12}
 label{display:block;color:#c6d8ec;font-size:13px;margin-bottom:6px}input,select{width:100%;padding:11px 12px;border:1px solid #3a5875;border-radius:7px;background:#08192a;color:var(--text);font:inherit}
-.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.formgrid .wide{grid-column:1/-1}.muted{color:var(--muted)}.rules{background:#09192a;border:1px solid var(--line);border-radius:8px;padding:12px;margin:14px 0;line-height:1.9}.rules span{color:var(--yellow);font-weight:700}.actions{display:flex;gap:8px;flex-wrap:wrap}.statcards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}.stat{padding:14px;border:1px solid var(--line);border-radius:10px;background:#0d2034}.stat b{font-size:24px;display:block}.stat small{color:var(--muted)}.hidden{display:none!important}.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.filters>*{max-width:260px}.status{color:#86e6a0;min-height:20px;font-size:13px}.small{font-size:12px;color:var(--muted)}.danger{border-color:#81444a;color:#ffb7bd}
-@media(max-width:900px){.grid{grid-template-columns:1fr}.meta{margin-left:0;width:100%}.statcards{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){main{padding:10px}header{padding:16px}.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}.statcards{grid-template-columns:1fr 1fr}}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.formgrid .wide{grid-column:1/-1}.muted{color:var(--muted)}.rules{background:#09192a;border:1px solid var(--line);border-radius:8px;padding:16px;margin:14px 0;line-height:1.7}.rules span{color:var(--yellow);font-weight:700}.actions{display:flex;gap:8px;flex-wrap:wrap}.statcards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}.stat{padding:14px;border:1px solid var(--line);border-radius:10px;background:#0d2034}.stat b{font-size:24px;display:block}.stat small{color:var(--muted)}.hidden{display:none!important}.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.filters>*{max-width:260px}.status{color:#86e6a0;min-height:20px;font-size:13px}.small{font-size:12px;color:var(--muted)}
+ul.rules-list{padding-left:20px;line-height:1.8}ul.rules-list li{margin-bottom:8px}
+.player-row{display:flex;gap:10px;align-items:center;margin-bottom:10px} .player-row input{flex:1}
+@media(max-width:900px){.statcards{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){main{padding:10px}header{padding:16px}.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}.statcards{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
-<header><div class="logo">⚽</div><div><h1>Stolní fotbal – Liga</h1><p>Každý s každým • 2 zápasy • automatické pořadí a statistiky</p></div><div class="meta" id="headerMeta"></div></header>
+<header><div class="logo">⚽</div><div><h1>Stolní fotbal – Liga</h1><p>Každý s každým • 2 zápasy • automatické pořadí</p></div><div class="meta" id="headerMeta"></div></header>
 <nav>
-<button class="active" data-tab="overview">🏆 Přehled</button><button data-tab="matches">📅 Zápasy</button><button data-tab="players">👥 Hráči</button><button data-tab="stats">📊 Statistiky</button>
+<button class="active" data-tab="overview">🏆 Přehled</button>
+<button data-tab="enter">✍️ Zápis výsledku</button>
+<button data-tab="matches">📅 Zápasy</button>
+<button data-tab="players">👥 Hráči</button>
+<button data-tab="stats">📊 Statistiky</button>
+<button data-tab="rules">📖 Pravidla</button>
 </nav>
 <main>
+
+<!-- PŘEHLED -->
 <section id="overview">
 <div class="statcards" id="summary"></div>
-<div class="grid">
 <div class="panel"><h2>🏆 Tabulka ligy</h2><div class="scroll"><table id="standings"></table></div></div>
+</section>
+
+<!-- ZÁPIS VÝSLEDKU -->
+<section id="enter" class="hidden">
 <div class="panel"><h2>✍️ Zapsat výsledek</h2><div class="content">
 <div class="formgrid">
-<div class="wide"><label>Naplánovaný zápas</label><select id="matchSelect"></select></div>
+<div class="wide"><label>Vyber naplánovaný zápas</label><select id="matchSelect"></select></div>
 <div><label>Hráč 1 – góly</label><input id="goalsA" type="number" min="0" max="10" value="10"></div>
 <div><label>Hráč 2 – góly</label><input id="goalsB" type="number" min="0" max="10" value="0"></div>
 <div class="wide small">Standardní zápas se hraje do 10 gólů. Zadej skutečné skóre; body se přidělí automaticky.</div>
 <div class="wide actions"><button class="btn primary" id="saveResult">Uložit výsledek</button><button class="btn" id="clearResult">Vymazat výsledek</button></div>
 </div>
-<div class="rules"><b>Bodování poraženého</b><br><span>0–4 góly</span> = 0 bodů<br><span>5–7 gólů</span> = 1 bod<br><span>8–9 gólů</span> = 2 body<br><span>Vítěz s 10 góly</span> = 3 body</div>
-<div id="resultMsg" class="status"></div>
-</div></div></div>
+<div id="resultMsg" class="status" style="margin-top:15px;"></div>
+</div></div>
 </section>
-<section id="matches" class="hidden"><div class="panel"><h2>📅 Rozpis zápasů</h2><div class="content"><div class="filters"><select id="matchFilter"><option value="all">Všechny zápasy</option><option value="pending">Neodehrané</option><option value="played">Odehrané</option></select><input id="searchMatch" placeholder="Hledat hráče…"></div><div class="scroll"><table id="matchesTable"></table></div></div></div></section>
-<section id="players" class="hidden"><div class="panel"><h2>👥 Správa hráčů</h2><div class="content"><p class="muted">Zde můžeš přidávat další hráče. Systém jim automaticky dogeneruje rozpisy zápasů s ostatními.</p><div id="playerInputs" class="formgrid"></div><div class="actions" style="margin-top:15px;"><button class="btn" id="addPlayer">➕ Přidat hráče</button><button class="btn primary" id="saveNames">💾 Uložit hráče a aktualizovat ligu</button></div><div id="playersMsg" class="status" style="margin-top:10px;"></div></div></div></section>
-<section id="stats" class="hidden"><div class="panel"><h2>📊 Podrobné statistiky hráčů</h2><div class="content"><div class="scroll"><table id="statsTable"></table></div></div></div></section>
-<div class="actions"><button class="btn" id="exportCsv">⬇ Exportovat výsledky CSV</button><button class="btn danger" id="resetAll">Resetovat celou ligu</button></div>
-<p class="small">Data se ukládají do úložiště tohoto prohlížeče na tomto zařízení. Pro jistotu si průběžně exportuj CSV.</p>
+
+<!-- ZÁPASY -->
+<section id="matches" class="hidden">
+<div class="panel"><h2>📅 Rozpis zápasů</h2><div class="content"><div class="filters"><select id="matchFilter"><option value="all">Všechny zápasy</option><option value="pending">Neodehrané</option><option value="played">Odehrané</option></select><input id="searchMatch" placeholder="Hledat hráče…"></div><div class="scroll"><table id="matchesTable"></table></div></div></div>
+</section>
+
+<!-- HRÁČI -->
+<section id="players" class="hidden">
+<div class="panel"><h2>👥 Správa hráčů</h2><div class="content">
+<p class="muted">Přidej nové hráče nebo křížkem odstraň ty, kteří nehrají. Zápasy se automaticky dogenerují nebo smažou.</p>
+<div id="playerInputs"></div>
+<div class="actions" style="margin-top:15px;"><button class="btn" id="addPlayer">➕ Přidat dalšího hráče</button><button class="btn primary" id="saveNames">💾 Uložit úpravy jmen</button></div>
+<div id="playersMsg" class="status" style="margin-top:10px;"></div>
+</div></div>
+</section>
+
+<!-- STATISTIKY -->
+<section id="stats" class="hidden">
+<div class="panel"><h2>📊 Podrobné statistiky</h2><div class="content"><div class="scroll"><table id="statsTable"></table></div></div></div>
+</section>
+
+<!-- PRAVIDLA -->
+<section id="rules" class="hidden">
+<div class="panel"><h2>📖 Pravidla a informace</h2><div class="content">
+<ul class="rules-list">
+<li>Každý hraje <b>dva zápasy s každým</b> (je úplně jedno, jestli se hrají za sebou nebo ne).</li>
+<li>Ten, kdo dostal gól, následně <b>vhazuje míček</b> do hry.</li>
+<li><b>Neplatí přímý gól po vhození.</b> Před střelou na bránu musí proběhnout minimálně jeden další dotyk.</li>
+<li>Zápas se hraje vždy do <b>10 gólů</b>.</li>
+</ul>
+<div class="rules">
+<b>Bodování ligy:</b><br>
+<span>Výhra (10 gólů)</span> = 3 body<br>
+<span>Prohra s 8–9 góly</span> = 2 body<br>
+<span>Prohra s 5–7 góly</span> = 1 bod<br>
+<span>Prohra s 0–4 góly</span> = 0 bodů
+</div>
+</div></div>
+</section>
+
+<div class="actions" style="margin-top:20px;"><button class="btn" id="exportCsv">⬇ Exportovat data do CSV</button><button class="btn danger" id="resetAll">Resetovat ligu do továrního nastavení</button></div>
 </main>
+
 <script>
-const KEY='foosballLeagueDyn_v1';
+const KEY='foosballLeague_v3';
 let state;
-function fresh(){return {names:["Hráč 1","Hráč 2"],matches:[]}}
-function updateFixtures(){let m=state.matches||[];for(let i=0;i<state.names.length;i++){for(let j=i+1;j<state.names.length;j++){let pair=m.filter(x=>(x.a===i&&x.b===j)||(x.a===j&&x.b===i));while(pair.length<2){let newId=m.length>0?Math.max(...m.map(x=>x.id))+1:0;let nm={id:newId,a:i,b:j,round:pair.length+1,ga:null,gb:null};m.push(nm);pair.push(nm)}}}state.matches=m}
-function load(){try{let s=JSON.parse(localStorage.getItem(KEY));if(s&&s.names){state=s;updateFixtures();return s}}catch(e){}let s=fresh();state=s;updateFixtures();return s}
+
+function fresh(){return {players:[{id:1,name:"Hráč 1"},{id:2,name:"Hráč 2"}],matches:[]}}
+function updateFixtures(){
+  let m=state.matches||[];
+  for(let i=0;i<state.players.length;i++){
+    for(let j=i+1;j<state.players.length;j++){
+      let pA=state.players[i].id;
+      let pB=state.players[j].id;
+      let pair=m.filter(x=>(x.a===pA&&x.b===pB)||(x.a===pB&&x.b===pA));
+      while(pair.length<2){
+        let nm={id:Date.now()+Math.random(),a:pA,b:pB,round:pair.length+1,ga:null,gb:null};
+        m.push(nm);
+        pair.push(nm);
+      }
+    }
+  }
+  state.matches=m;
+}
+
+function load(){
+  try{
+    let s=JSON.parse(localStorage.getItem(KEY));
+    if(s&&s.players){state=s;updateFixtures();return s}
+  }catch(e){}
+  let s=fresh();state=s;updateFixtures();return s
+}
 state=load();
 function persist(){localStorage.setItem(KEY,JSON.stringify(state))}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function played(m){return Number.isInteger(m.ga)&&Number.isInteger(m.gb)}
+function played(m){return m.ga!==null&&m.gb!==null}
+function getP(id){return state.players.find(x=>x.id===id)||{name:'Neznámý'}}
+
 function loserPoints(g){return g<=4?0:g<=7?1:g<=9?2:0}
-function stats(){return state.names.map((name,i)=>({i,name,played:0,w:0,l:0,for:0,against:0,points:0})).map(p=>{for(const m of state.matches){if(!played(m)||!(m.a===p.i||m.b===p.i))continue;p.played++;let own=m.a===p.i?m.ga:m.gb,opp=m.a===p.i?m.gb:m.ga;p.for+=own;p.against+=opp;if(own>opp){p.w++;p.points+=3}else if(own<opp){p.l++;p.points+=loserPoints(own)}}p.diff=p.for-p.against;return p})}
-function sorted(){return stats().sort((a,b)=>b.points-a.points||b.diff-a.diff||b.for-a.for||a.name.localeCompare(b.name,'cs'))}
-function matchLabel(m){return `${state.names[m.a]} – ${state.names[m.b]} (zápas ${m.round} z dvojice)`}
+function getStats(){
+  return state.players.map(p=>({id:p.id,name:p.name,played:0,w:0,l:0,for:0,against:0,points:0})).map(p=>{
+    for(const m of state.matches){
+      if(!played(m)||!(m.a===p.id||m.b===p.id))continue;
+      p.played++;
+      let own=m.a===p.id?m.ga:m.gb;
+      let opp=m.a===p.id?m.gb:m.ga;
+      p.for+=own; p.against+=opp;
+      if(own>opp){p.w++;p.points+=3}
+      else if(own<opp){p.l++;p.points+=loserPoints(own)}
+    }
+    p.diff=p.for-p.against;
+    return p;
+  })
+}
+function sorted(){return getStats().sort((a,b)=>b.points-a.points||b.diff-a.diff||b.for-a.for||a.name.localeCompare(b.name,'cs'))}
+function matchLabel(m){return `${getP(m.a).name} – ${getP(m.b).name} (zápas ${m.round})`}
 function rank(i){return `<span class="rank ${i===0?'r1':i===1?'r2':i===2?'r3':''}">${i+1}</span>`}
-function renderSummary(){let ms=state.matches.filter(played).length,ss=sorted();document.querySelector('#summary').innerHTML=[['Odehrané zápasy',`${ms}/${state.matches.length}`],['Zbývá zápasů',state.matches.length-ms],['Vede liga',ss[0]?.name||'—'],['Nejvíce gólů',Math.max(0,...ss.map(x=>x.for))]].map(x=>`<div class="stat"><small>${x[0]}</small><b>${esc(x[1])}</b></div>`).join('');document.querySelector('#headerMeta').textContent=`${state.names.length} hráčů · ${state.matches.length} zápasů celkem`;}
-function renderStandings(){let s=sorted();document.querySelector('#standings').innerHTML=`<thead><tr><th>#</th><th>Hráč</th><th>Zápasy</th><th>Výhry</th><th>Prohry</th><th>Skóre</th><th>Body</th></tr></thead><tbody>${s.map((p,i)=>`<tr><td>${rank(i)}</td><td>${esc(p.name)}</td><td>${p.played}</td><td>${p.w}</td><td>${p.l}</td><td>${p.for}:${p.against}</td><td><b>${p.points}</b></td></tr>`).join('')}</tbody>`}
-function renderStats(){let s=sorted();document.querySelector('#statsTable').innerHTML=`<thead><tr><th>#</th><th>Hráč</th><th>Zápasy</th><th>Výhry</th><th>Prohry</th><th>Skóre</th><th>Body</th></tr></thead><tbody>${s.map((p,i)=>`<tr><td>${rank(i)}</td><td>${esc(p.name)}</td><td>${p.played}</td><td>${p.w}</td><td>${p.l}</td><td>${p.for}:${p.against}</td><td><b>${p.points}</b></td></tr>`).join('')}</tbody>`}
-function renderSelect(){let sel=document.querySelector('#matchSelect'),old=sel.value;sel.innerHTML=state.matches.map(m=>`<option value="${m.id}" ${played(m)?'':'data-pending="1"'}>${played(m)?'✓ ':''}${esc(matchLabel(m))}${played(m)?` · ${m.ga}:${m.gb}`:''}</option>`).join('');let first=state.matches.find(m=>!played(m));sel.value=state.matches.some(m=>String(m.id)===old)?old:String(first?.id??0);loadSelected()}
-function loadSelected(){let m=state.matches[+document.querySelector('#matchSelect').value];if(!m)return;document.querySelector('#goalsA').value=played(m)?m.ga:10;document.querySelector('#goalsB').value=played(m)?m.gb:0;document.querySelector('#resultMsg').textContent=`${state.names[m.a]} vs. ${state.names[m.b]}`}
-function renderMatches(){let f=document.querySelector('#matchFilter').value,q=document.querySelector('#searchMatch').value.toLocaleLowerCase('cs');let ms=state.matches.filter(m=>(f==='all'||(f==='played'?played(m):!played(m)))&&matchLabel(m).toLocaleLowerCase('cs').includes(q));document.querySelector('#matchesTable').innerHTML=`<thead><tr><th>#</th><th>Hráč 1</th><th>Skóre</th><th>Hráč 2</th><th>Stav</th><th>Akce</th></tr></thead><tbody>${ms.map(m=>`<tr><td>${m.id+1}</td><td>${esc(state.names[m.a])}</td><td>${played(m)?`${m.ga} : ${m.gb}`:'— : —'}</td><td>${esc(state.names[m.b])}</td><td>${played(m)?'Odehráno':'Čeká'}</td><td><button class="btn" data-edit="${m.id}">${played(m)?'Upravit':'Zadat'}</button></td></tr>`).join('')}</tbody>`}
-function renderPlayers(){document.querySelector('#playerInputs').innerHTML=state.names.map((n,i)=>`<div><label>Hráč ${i+1}</label><input maxlength="40" value="${esc(n)}"></div>`).join('')}
+
+function renderSummary(){
+  let ms=state.matches.filter(played).length,ss=sorted();
+  document.querySelector('#summary').innerHTML=[
+    ['Odehrané zápasy',`${ms}/${state.matches.length}`],
+    ['Zbývá zápasů',state.matches.length-ms],
+    ['Vede liga',ss[0]?.name||'—'],
+    ['Nejvíce gólů',ss.length>0?Math.max(...ss.map(x=>x.for)):'0']
+  ].map(x=>`<div class="stat"><small>${x[0]}</small><b>${esc(x[1])}</b></div>`).join('');
+  document.querySelector('#headerMeta').textContent=`${state.players.length} hráčů · ${state.matches.length} zápasů celkem`;
+}
+function renderStandings(){
+  let s=sorted();
+  document.querySelector('#standings').innerHTML=`<thead><tr><th>#</th><th>Hráč</th><th>Zápasy</th><th>Výhry</th><th>Prohry</th><th>Skóre</th><th>Body</th></tr></thead><tbody>${s.map((p,i)=>`<tr><td>${rank(i)}</td><td>${esc(p.name)}</td><td>${p.played}</td><td>${p.w}</td><td>${p.l}</td><td>${p.for}:${p.against}</td><td><b>${p.points}</b></td></tr>`).join('')}</tbody>`
+}
+function renderStats(){
+  let s=sorted();
+  document.querySelector('#statsTable').innerHTML=`<thead><tr><th>#</th><th>Hráč</th><th>Zápasy</th><th>Výhry</th><th>Prohry</th><th>Skóre</th><th>Body</th></tr></thead><tbody>${s.map((p,i)=>`<tr><td>${rank(i)}</td><td>${esc(p.name)}</td><td>${p.played}</td><td>${p.w}</td><td>${p.l}</td><td>${p.for}:${p.against}</td><td><b>${p.points}</b></td></tr>`).join('')}</tbody>`
+}
+function renderSelect(){
+  let sel=document.querySelector('#matchSelect'),old=sel.value;
+  sel.innerHTML=state.matches.map(m=>`<option value="${m.id}" ${played(m)?'':'data-pending="1"'}>${played(m)?'✓ ':''}${esc(matchLabel(m))}${played(m)?` · ${m.ga}:${m.gb}`:''}</option>`).join('');
+  let first=state.matches.find(m=>!played(m));
+  sel.value=state.matches.some(m=>String(m.id)===old)?old:String(first?.id??state.matches[0]?.id??'');
+  loadSelected();
+}
+function loadSelected(){
+  let m=state.matches.find(x=>String(x.id)===document.querySelector('#matchSelect').value);
+  if(!m)return;
+  document.querySelector('#goalsA').value=played(m)?m.ga:10;
+  document.querySelector('#goalsB').value=played(m)?m.gb:0;
+  document.querySelector('#resultMsg').textContent=`${getP(m.a).name} vs. ${getP(m.b).name}`;
+}
+function renderMatches(){
+  let f=document.querySelector('#matchFilter').value,q=document.querySelector('#searchMatch').value.toLocaleLowerCase('cs');
+  let ms=state.matches.filter(m=>(f==='all'||(f==='played'?played(m):!played(m)))&&matchLabel(m).toLocaleLowerCase('cs').includes(q));
+  document.querySelector('#matchesTable').innerHTML=`<thead><tr><th>Hráč 1</th><th>Skóre</th><th>Hráč 2</th><th>Stav</th><th>Akce</th></tr></thead><tbody>${ms.map(m=>`<tr><td>${esc(getP(m.a).name)}</td><td>${played(m)?`<b>${m.ga} : ${m.gb}</b>`:'— : —'}</td><td>${esc(getP(m.b).name)}</td><td>${played(m)?'Odehráno':'Čeká'}</td><td><button class="btn" data-edit="${m.id}">${played(m)?'Upravit':'Zadat'}</button></td></tr>`).join('')}</tbody>`
+}
+function renderPlayers(){
+  document.querySelector('#playerInputs').innerHTML=state.players.map((p)=>`
+    <div class="player-row">
+      <input class="p-name" data-id="${p.id}" maxlength="40" value="${esc(p.name)}" placeholder="Jméno hráče">
+      <button class="btn danger" onclick="removePlayer(${p.id})" title="Odstranit hráče">✖</button>
+    </div>
+  `).join('');
+}
 function render(){renderSummary();renderStandings();renderStats();renderSelect();renderMatches();renderPlayers()}
-document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));['overview','matches','players','stats'].forEach(id=>document.getElementById(id).classList.toggle('hidden',id!==b.dataset.tab))}));
+
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));
+  ['overview','enter','matches','players','stats','rules'].forEach(id=>document.getElementById(id).classList.toggle('hidden',id!==b.dataset.tab));
+}));
 document.querySelector('#matchSelect').addEventListener('change',loadSelected);
-document.querySelector('#saveResult').addEventListener('click',()=>{let m=state.matches[+document.querySelector('#matchSelect').value],ga=Number(document.querySelector('#goalsA').value),gb=Number(document.querySelector('#goalsB').value),msg=document.querySelector('#resultMsg');if(!m)return;if(!Number.isInteger(ga)||!Number.isInteger(gb)||ga<0||gb<0||ga>10||gb>10){msg.textContent='Zadej celé číslo od 0 do 10.';return}if(ga===gb){msg.textContent='Remíza není u zápasu do 10 gólů možná. Oprav skóre.';return}if(Math.max(ga,gb)!==10){msg.textContent='Vítěz musí mít 10 gólů. Zkontroluj skóre.';return}m.ga=ga;m.gb=gb;persist();render();document.querySelector('#matchSelect').value=String(m.id);loadSelected();document.querySelector('#resultMsg').textContent=`Uloženo: ${state.names[m.a]} ${ga}:${gb} ${state.names[m.b]}. Body přepočítány.`});
-document.querySelector('#clearResult').addEventListener('click',()=>{let m=state.matches[+document.querySelector('#matchSelect').value];if(m){m.ga=null;m.gb=null;persist();render();document.querySelector('#matchSelect').value=String(m.id);loadSelected();document.querySelector('#resultMsg').textContent='Výsledek byl vymazán.'}});
-document.querySelector('#matchFilter').addEventListener('change',renderMatches);document.querySelector('#searchMatch').addEventListener('input',renderMatches);
-document.querySelector('#matchesTable').addEventListener('click',e=>{let b=e.target.closest('[data-edit]');if(!b)return;document.querySelector('[data-tab="overview"]').click();document.querySelector('#matchSelect').value=b.dataset.edit;loadSelected();window.scrollTo({top:0,behavior:'smooth'})});
-document.querySelector('#addPlayer').addEventListener('click',()=>{let inputs=document.querySelectorAll('#playerInputs input');let currentNames=Array.from(inputs).map(inp=>inp.value);currentNames.push(`Hráč ${currentNames.length+1}`);document.querySelector('#playerInputs').innerHTML=currentNames.map((n,i)=>`<div><label>Hráč ${i+1}</label><input maxlength="40" value="${esc(n)}"></div>`).join('')});
-document.querySelector('#saveNames').addEventListener('click',()=>{let inputs=document.querySelectorAll('#playerInputs input');let names=Array.from(inputs).map((inp,i)=>inp.value.trim()||`Hráč ${i+1}`);if(new Set(names.map(n=>n.toLocaleLowerCase('cs'))).size!==names.length){document.querySelector('#playersMsg').textContent='Každý hráč musí mít jedinečné jméno.';return}state.names=names;updateFixtures();persist();render();document.querySelector('#playersMsg').textContent='Jména uložena a rozpis zápasů byl aktualizován.'});
-document.querySelector('#resetAll').addEventListener('click',()=>{if(confirm('Opravdu chceš vymazat všechny výsledky a začít s novou prázdnou ligou?')){state=fresh();updateFixtures();persist();render()}});
-document.querySelector('#exportCsv').addEventListener('click',()=>{let rows=[['Zápas','Hráč 1','Góly hráče 1','Góly hráče 2','Hráč 2','Stav'],...state.matches.map(m=>[m.id+1,state.names[m.a],played(m)?m.ga:'',played(m)?m.gb:'',state.names[m.b],played(m)?'Odehráno':'Neodehráno'])];let csv='\ufeff'+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(';')).join('\r\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download='stolni-fotbal-vysledky.csv';a.click();URL.revokeObjectURL(a.href)});
+document.querySelector('#saveResult').addEventListener('click',()=>{
+  let m=state.matches.find(x=>String(x.id)===document.querySelector('#matchSelect').value);
+  let ga=Number(document.querySelector('#goalsA').value),gb=Number(document.querySelector('#goalsB').value);
+  let msg=document.querySelector('#resultMsg');
+  if(!m)return;
+  if(!Number.isInteger(ga)||!Number.isInteger(gb)||ga<0||gb<0||ga>10||gb>10){msg.textContent='Zadej celé číslo od 0 do 10.';return}
+  if(ga===gb){msg.textContent='Remíza není u zápasu do 10 gólů možná.';return}
+  if(Math.max(ga,gb)!==10){msg.textContent='Vítěz musí mít 10 gólů.';return}
+  m.ga=ga;m.gb=gb;persist();render();
+  document.querySelector('#matchSelect').value=String(m.id);loadSelected();
+  msg.textContent=`Uloženo: ${getP(m.a).name} ${ga}:${gb} ${getP(m.b).name}`;
+});
+document.querySelector('#clearResult').addEventListener('click',()=>{
+  let m=state.matches.find(x=>String(x.id)===document.querySelector('#matchSelect').value);
+  if(m){m.ga=null;m.gb=null;persist();render();document.querySelector('#matchSelect').value=String(m.id);loadSelected();document.querySelector('#resultMsg').textContent='Výsledek byl vymazán.'}
+});
+document.querySelector('#matchFilter').addEventListener('change',renderMatches);
+document.querySelector('#searchMatch').addEventListener('input',renderMatches);
+document.querySelector('#matchesTable').addEventListener('click',e=>{
+  let b=e.target.closest('[data-edit]');if(!b)return;
+  document.querySelector('[data-tab="enter"]').click();
+  document.querySelector('#matchSelect').value=b.dataset.edit;loadSelected();window.scrollTo({top:0,behavior:'smooth'});
+});
+
+window.removePlayer=function(id){
+  if(confirm('Opravdu chceš tohoto hráče smazat? Zmizí i všechny jeho zápasy.')){
+    if(confirm('Jsi si NAPROSTO JISTÝ? Smazání je trvalé a nenávratně odstraní i všechny jeho dosud odehrané výsledky!')){
+      state.players=state.players.filter(p=>p.id!==id);
+      state.matches=state.matches.filter(m=>m.a!==id&&m.b!==id);
+      persist();render();
+    }
+  }
+};
+document.querySelector('#addPlayer').addEventListener('click',()=>{
+  let newId=Date.now();
+  state.players.push({id:newId,name:`Hráč ${state.players.length+1}`});
+  updateFixtures();persist();render();
+});
+document.querySelector('#saveNames').addEventListener('click',()=>{
+  document.querySelectorAll('.p-name').forEach(inp=>{
+    let p=state.players.find(x=>x.id===Number(inp.dataset.id));
+    if(p) p.name=inp.value.trim()||p.name;
+  });
+  persist();render();
+  document.querySelector('#playersMsg').textContent='Jména uložena.';
+  setTimeout(()=>document.querySelector('#playersMsg').textContent='',3000);
+});
+document.querySelector('#resetAll').addEventListener('click',()=>{
+  if(confirm('Opravdu chceš vymazat úplně vše a začít od nuly?')){state=fresh();updateFixtures();persist();render()}
+});
+document.querySelector('#exportCsv').addEventListener('click',()=>{
+  let rows=[['Hrac 1','Skore 1','Skore 2','Hrac 2','Stav'],...state.matches.map(m=>[getP(m.a).name,played(m)?m.ga:'',played(m)?m.gb:'',getP(m.b).name,played(m)?'Odehrano':'Neodehrano'])];
+  let csv='\ufeff'+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(';')).join('\r\n');
+  let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download='liga.csv';a.click();URL.revokeObjectURL(a.href);
+});
 render();
 </script>
 </body></html>
