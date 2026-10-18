@@ -23,7 +23,6 @@ ul.rules-list{padding-left:20px;line-height:1.8}ul.rules-list li{margin-bottom:8
 .online{background:#25bd53 !important;box-shadow:0 0 5px #25bd53 !important;}
 @media(max-width:900px){.statcards{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){main{padding:10px}header{padding:16px}.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}.statcards{grid-template-columns:1fr 1fr}}
 </style>
-<!-- Načtení Firebase knihoven -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
@@ -96,23 +95,18 @@ ul.rules-list{padding-left:20px;line-height:1.8}ul.rules-list li{margin-bottom:8
 </main>
 
 <script>
-// ==============================================================
-// 1. ZDE VLOŽ SVŮJ FIREBASE CONFIG Z KROKU 1:
-// ==============================================================
+// Tvé reálné Firebase propojení
 const firebaseConfig = {
-  apiKey: "AIzaSyAPNDQJjjn34Svk6TS11L2F3_ScZTwpCrw",
-  authDomain: "ligastolnifotbal.firebaseapp.com",
-  databaseURL: "https://ligastolnifotbal-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "ligastolnifotbal",
-  storageBucket: "ligastolnifotbal.firebasestorage.app",
-  messagingSenderId: "754735350677",
-  appId: "1:754735350677:web:72f1409db2c73d1f4c6c9c",
-  measurementId: "G-MYXNPY0B42"
+  apiKey: "AIzaSyAPNDQJjjn34Svk6TS11L2F3_ScZTwpCrw",
+  authDomain: "ligastolnifotbal.firebaseapp.com",
+  databaseURL: "https://ligastolnifotbal-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ligastolnifotbal",
+  storageBucket: "ligastolnifotbal.firebasestorage.app",
+  messagingSenderId: "754735350677",
+  appId: "1:754735350677:web:72f1409db2c73d1f4c6c9c",
+  measurementId: "G-MYXNPY0B42"
 };
 
-// ==============================================================
-
-// Inicializace Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -121,14 +115,13 @@ let dataLoaded = false;
 
 function fresh(){ return {players:[{id:1,name:"Hráč 1"},{id:2,name:"Hráč 2"}],matches:[]} }
 
-// Poslouchání změn v databázi v reálném čase
 db.ref('foosballLeague').on('value', (snapshot) => {
   const data = snapshot.val();
   if (data) {
     state.players = data.players || [];
     state.matches = data.matches || [];
   } else {
-    state = fresh(); // Pokud je databáze prázdná
+    state = fresh();
   }
   dataLoaded = true;
   document.getElementById('syncStatus').classList.add('online');
@@ -136,7 +129,6 @@ db.ref('foosballLeague').on('value', (snapshot) => {
   render();
 });
 
-// Funkce pro odeslání aktuálního stavu do databáze
 function persist(){
   db.ref('foosballLeague').set({
     players: state.players,
@@ -152,7 +144,7 @@ function updateFixtures(){
       let pB=state.players[j].id;
       let pair=m.filter(x=>(x.a===pA&&x.b===pB)||(x.a===pB&&x.b===pA));
       while(pair.length<2){
-        let nm={id:Date.now()+Math.random(),a:pA,b:pB,round:pair.length+1,ga:null,gb:null};
+        let nm={id:Date.now()+Math.random(),a:pA,b:pB,round:pair.length+1,ga:'',gb:''};
         m.push(nm);
         pair.push(nm);
       }
@@ -162,7 +154,7 @@ function updateFixtures(){
 }
 
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function played(m){return m.ga!==null&&m.gb!==null}
+function played(m){return typeof m.ga==='number' && typeof m.gb==='number'}
 function getP(id){return state.players.find(x=>x.id===id)||{name:'Neznámý'}}
 function loserPoints(g){return g<=4?0:g<=7?1:g<=9?2:0}
 
@@ -250,15 +242,15 @@ document.querySelector('#saveResult').addEventListener('click',()=>{
   if(ga===gb){msg.textContent='Remíza není u zápasu do 10 gólů možná.';return}
   if(Math.max(ga,gb)!==10){msg.textContent='Vítěz musí mít 10 gólů.';return}
   m.ga=ga;m.gb=gb;
-  persist(); // Uložení do Firebase
+  persist();
   msg.textContent=`Odesláno na server: ${getP(m.a).name} ${ga}:${gb} ${getP(m.b).name}`;
 });
 
 document.querySelector('#clearResult').addEventListener('click',()=>{
   let m=state.matches.find(x=>String(x.id)===document.querySelector('#matchSelect').value);
   if(m){
-    m.ga=null;m.gb=null;
-    persist(); // Uložení do Firebase
+    m.ga='';m.gb='';
+    persist();
     document.querySelector('#resultMsg').textContent='Výsledek byl na serveru vymazán.';
   }
 });
