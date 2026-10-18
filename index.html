@@ -19,14 +19,26 @@ label{display:block;color:#c6d8ec;font-size:13px;margin-bottom:6px}input,select{
 .formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.formgrid .wide{grid-column:1/-1}.muted{color:var(--muted)}.rules{background:#09192a;border:1px solid var(--line);border-radius:8px;padding:16px;margin:14px 0;line-height:1.7}.rules span{color:var(--yellow);font-weight:700}.actions{display:flex;gap:8px;flex-wrap:wrap}.statcards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}.stat{padding:14px;border:1px solid var(--line);border-radius:10px;background:#0d2034}.stat b{font-size:24px;display:block}.stat small{color:var(--muted)}.hidden{display:none!important}.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.filters>*{max-width:260px}.status{color:#86e6a0;min-height:20px;font-size:13px}.small{font-size:12px;color:var(--muted)}
 ul.rules-list{padding-left:20px;line-height:1.8}ul.rules-list li{margin-bottom:8px}
 .player-row{display:flex;gap:10px;align-items:center;margin-bottom:10px} .player-row input{flex:1}
+#syncStatus{display:inline-block;width:10px;height:10px;border-radius:50%;background:red;margin-right:8px;box-shadow:0 0 5px red;}
+.online{background:#25bd53 !important;box-shadow:0 0 5px #25bd53 !important;}
 @media(max-width:900px){.statcards{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){main{padding:10px}header{padding:16px}.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}.statcards{grid-template-columns:1fr 1fr}}
 </style>
+<!-- Načtení Firebase knihoven -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
-<header><div class="logo">⚽</div><div><h1>Stolní fotbal – Liga</h1><p>Každý s každým • 2 zápasy • automatické pořadí</p></div><div class="meta" id="headerMeta"></div></header>
+<header>
+  <div class="logo">⚽</div>
+  <div>
+    <h1>Stolní fotbal – Liga</h1>
+    <p><span id="syncStatus"></span><span id="syncText">Odpojeno</span> • Cloud databáze aktivní</p>
+  </div>
+  <div class="meta" id="headerMeta">Načítám data z cloudu...</div>
+</header>
 <nav>
 <button class="active" data-tab="overview">🏆 Přehled</button>
-<button data-tab="enter">✍️ Zápis výsledku</button>
+<button data-tab="enter">✍️ Zápis</button>
 <button data-tab="matches">📅 Zápasy</button>
 <button data-tab="players">👥 Hráči</button>
 <button data-tab="stats">📊 Statistiky</button>
@@ -34,73 +46,103 @@ ul.rules-list{padding-left:20px;line-height:1.8}ul.rules-list li{margin-bottom:8
 </nav>
 <main>
 
-<!-- PŘEHLED -->
 <section id="overview">
 <div class="statcards" id="summary"></div>
 <div class="panel"><h2>🏆 Tabulka ligy</h2><div class="scroll"><table id="standings"></table></div></div>
 </section>
 
-<!-- ZÁPIS VÝSLEDKU -->
 <section id="enter" class="hidden">
 <div class="panel"><h2>✍️ Zapsat výsledek</h2><div class="content">
 <div class="formgrid">
 <div class="wide"><label>Vyber naplánovaný zápas</label><select id="matchSelect"></select></div>
 <div><label>Hráč 1 – góly</label><input id="goalsA" type="number" min="0" max="10" value="10"></div>
 <div><label>Hráč 2 – góly</label><input id="goalsB" type="number" min="0" max="10" value="0"></div>
-<div class="wide small">Standardní zápas se hraje do 10 gólů. Zadej skutečné skóre; body se přidělí automaticky.</div>
-<div class="wide actions"><button class="btn primary" id="saveResult">Uložit výsledek</button><button class="btn" id="clearResult">Vymazat výsledek</button></div>
+<div class="wide actions"><button class="btn primary" id="saveResult">Uložit do cloudu</button><button class="btn" id="clearResult">Vymazat výsledek</button></div>
 </div>
 <div id="resultMsg" class="status" style="margin-top:15px;"></div>
 </div></div>
 </section>
 
-<!-- ZÁPASY -->
 <section id="matches" class="hidden">
 <div class="panel"><h2>📅 Rozpis zápasů</h2><div class="content"><div class="filters"><select id="matchFilter"><option value="all">Všechny zápasy</option><option value="pending">Neodehrané</option><option value="played">Odehrané</option></select><input id="searchMatch" placeholder="Hledat hráče…"></div><div class="scroll"><table id="matchesTable"></table></div></div></div>
 </section>
 
-<!-- HRÁČI -->
 <section id="players" class="hidden">
 <div class="panel"><h2>👥 Správa hráčů</h2><div class="content">
-<p class="muted">Přidej nové hráče nebo křížkem odstraň ty, kteří nehrají. Zápasy se automaticky dogenerují nebo smažou.</p>
+<p class="muted">Úpravy zde se okamžitě projeví na všech zařízeních.</p>
 <div id="playerInputs"></div>
 <div class="actions" style="margin-top:15px;"><button class="btn" id="addPlayer">➕ Přidat dalšího hráče</button><button class="btn primary" id="saveNames">💾 Uložit úpravy jmen</button></div>
 <div id="playersMsg" class="status" style="margin-top:10px;"></div>
 </div></div>
 </section>
 
-<!-- STATISTIKY -->
 <section id="stats" class="hidden">
 <div class="panel"><h2>📊 Podrobné statistiky</h2><div class="content"><div class="scroll"><table id="statsTable"></table></div></div></div>
 </section>
 
-<!-- PRAVIDLA -->
 <section id="rules" class="hidden">
 <div class="panel"><h2>📖 Pravidla a informace</h2><div class="content">
 <ul class="rules-list">
-<li>Každý hraje <b>dva zápasy s každým</b> (je úplně jedno, jestli se hrají za sebou nebo ne).</li>
+<li>Každý hraje <b>dva zápasy s každým</b>.</li>
 <li>Ten, kdo dostal gól, následně <b>vhazuje míček</b> do hry.</li>
 <li><b>Neplatí přímý gól po vhození.</b> Před střelou na bránu musí proběhnout minimálně jeden další dotyk.</li>
 <li>Zápas se hraje vždy do <b>10 gólů</b>.</li>
 </ul>
-<div class="rules">
-<b>Bodování ligy:</b><br>
-<span>Výhra (10 gólů)</span> = 3 body<br>
-<span>Prohra s 8–9 góly</span> = 2 body<br>
-<span>Prohra s 5–7 góly</span> = 1 bod<br>
-<span>Prohra s 0–4 góly</span> = 0 bodů
-</div>
+<div class="rules"><b>Bodování ligy:</b><br><span>Výhra (10 gólů)</span> = 3 body<br><span>Prohra s 8–9 góly</span> = 2 body<br><span>Prohra s 5–7 góly</span> = 1 bod<br><span>Prohra s 0–4 góly</span> = 0 bodů</div>
 </div></div>
 </section>
 
-<div class="actions" style="margin-top:20px;"><button class="btn" id="exportCsv">⬇ Exportovat data do CSV</button><button class="btn danger" id="resetAll">Resetovat ligu do továrního nastavení</button></div>
+<div class="actions" style="margin-top:20px;"><button class="btn danger" id="resetAll">Resetovat celou online ligu</button></div>
 </main>
 
 <script>
-const KEY='foosballLeague_v3';
-let state;
+// ==============================================================
+// 1. ZDE VLOŽ SVŮJ FIREBASE CONFIG Z KROKU 1:
+// ==============================================================
+const firebaseConfig = {
+  apiKey: "tvoje-opravdove-api-key",
+  authDomain: "stolni-fotbal-123.firebaseapp.com",
+  databaseURL: "https://stolni-fotbal-123-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "stolni-fotbal-123",
+  storageBucket: "stolni-fotbal-123.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abcdef"
+};
 
-function fresh(){return {players:[{id:1,name:"Hráč 1"},{id:2,name:"Hráč 2"}],matches:[]}}
+// ==============================================================
+
+// Inicializace Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let state = { players: [], matches: [] };
+let dataLoaded = false;
+
+function fresh(){ return {players:[{id:1,name:"Hráč 1"},{id:2,name:"Hráč 2"}],matches:[]} }
+
+// Poslouchání změn v databázi v reálném čase
+db.ref('foosballLeague').on('value', (snapshot) => {
+  const data = snapshot.val();
+  if (data) {
+    state.players = data.players || [];
+    state.matches = data.matches || [];
+  } else {
+    state = fresh(); // Pokud je databáze prázdná
+  }
+  dataLoaded = true;
+  document.getElementById('syncStatus').classList.add('online');
+  document.getElementById('syncText').textContent = 'Online';
+  render();
+});
+
+// Funkce pro odeslání aktuálního stavu do databáze
+function persist(){
+  db.ref('foosballLeague').set({
+    players: state.players,
+    matches: state.matches
+  });
+}
+
 function updateFixtures(){
   let m=state.matches||[];
   for(let i=0;i<state.players.length;i++){
@@ -118,20 +160,11 @@ function updateFixtures(){
   state.matches=m;
 }
 
-function load(){
-  try{
-    let s=JSON.parse(localStorage.getItem(KEY));
-    if(s&&s.players){state=s;updateFixtures();return s}
-  }catch(e){}
-  let s=fresh();state=s;updateFixtures();return s
-}
-state=load();
-function persist(){localStorage.setItem(KEY,JSON.stringify(state))}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function played(m){return m.ga!==null&&m.gb!==null}
 function getP(id){return state.players.find(x=>x.id===id)||{name:'Neznámý'}}
-
 function loserPoints(g){return g<=4?0:g<=7?1:g<=9?2:0}
+
 function getStats(){
   return state.players.map(p=>({id:p.id,name:p.name,played:0,w:0,l:0,for:0,against:0,points:0})).map(p=>{
     for(const m of state.matches){
@@ -196,13 +229,17 @@ function renderPlayers(){
     </div>
   `).join('');
 }
-function render(){renderSummary();renderStandings();renderStats();renderSelect();renderMatches();renderPlayers()}
+function render(){
+  if(!dataLoaded) return;
+  renderSummary();renderStandings();renderStats();renderSelect();renderMatches();renderPlayers();
+}
 
 document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));
   ['overview','enter','matches','players','stats','rules'].forEach(id=>document.getElementById(id).classList.toggle('hidden',id!==b.dataset.tab));
 }));
 document.querySelector('#matchSelect').addEventListener('change',loadSelected);
+
 document.querySelector('#saveResult').addEventListener('click',()=>{
   let m=state.matches.find(x=>String(x.id)===document.querySelector('#matchSelect').value);
   let ga=Number(document.querySelector('#goalsA').value),gb=Number(document.querySelector('#goalsB').value);
@@ -211,14 +248,20 @@ document.querySelector('#saveResult').addEventListener('click',()=>{
   if(!Number.isInteger(ga)||!Number.isInteger(gb)||ga<0||gb<0||ga>10||gb>10){msg.textContent='Zadej celé číslo od 0 do 10.';return}
   if(ga===gb){msg.textContent='Remíza není u zápasu do 10 gólů možná.';return}
   if(Math.max(ga,gb)!==10){msg.textContent='Vítěz musí mít 10 gólů.';return}
-  m.ga=ga;m.gb=gb;persist();render();
-  document.querySelector('#matchSelect').value=String(m.id);loadSelected();
-  msg.textContent=`Uloženo: ${getP(m.a).name} ${ga}:${gb} ${getP(m.b).name}`;
+  m.ga=ga;m.gb=gb;
+  persist(); // Uložení do Firebase
+  msg.textContent=`Odesláno na server: ${getP(m.a).name} ${ga}:${gb} ${getP(m.b).name}`;
 });
+
 document.querySelector('#clearResult').addEventListener('click',()=>{
   let m=state.matches.find(x=>String(x.id)===document.querySelector('#matchSelect').value);
-  if(m){m.ga=null;m.gb=null;persist();render();document.querySelector('#matchSelect').value=String(m.id);loadSelected();document.querySelector('#resultMsg').textContent='Výsledek byl vymazán.'}
+  if(m){
+    m.ga=null;m.gb=null;
+    persist(); // Uložení do Firebase
+    document.querySelector('#resultMsg').textContent='Výsledek byl na serveru vymazán.';
+  }
 });
+
 document.querySelector('#matchFilter').addEventListener('change',renderMatches);
 document.querySelector('#searchMatch').addEventListener('input',renderMatches);
 document.querySelector('#matchesTable').addEventListener('click',e=>{
@@ -229,35 +272,33 @@ document.querySelector('#matchesTable').addEventListener('click',e=>{
 
 window.removePlayer=function(id){
   if(confirm('Opravdu chceš tohoto hráče smazat? Zmizí i všechny jeho zápasy.')){
-    if(confirm('Jsi si NAPROSTO JISTÝ? Smazání je trvalé a nenávratně odstraní i všechny jeho dosud odehrané výsledky!')){
+    if(confirm('Jsi si NAPROSTO JISTÝ? Smazání se provede online a nenávratně odstraní výsledky!')){
       state.players=state.players.filter(p=>p.id!==id);
       state.matches=state.matches.filter(m=>m.a!==id&&m.b!==id);
-      persist();render();
+      persist();
     }
   }
 };
 document.querySelector('#addPlayer').addEventListener('click',()=>{
-  let newId=Date.now();
-  state.players.push({id:newId,name:`Hráč ${state.players.length+1}`});
-  updateFixtures();persist();render();
+  state.players.push({id:Date.now(),name:`Hráč ${state.players.length+1}`});
+  updateFixtures();
+  persist();
 });
 document.querySelector('#saveNames').addEventListener('click',()=>{
   document.querySelectorAll('.p-name').forEach(inp=>{
     let p=state.players.find(x=>x.id===Number(inp.dataset.id));
     if(p) p.name=inp.value.trim()||p.name;
   });
-  persist();render();
-  document.querySelector('#playersMsg').textContent='Jména uložena.';
+  persist();
+  document.querySelector('#playersMsg').textContent='Jména synchronizována do cloudu.';
   setTimeout(()=>document.querySelector('#playersMsg').textContent='',3000);
 });
 document.querySelector('#resetAll').addEventListener('click',()=>{
-  if(confirm('Opravdu chceš vymazat úplně vše a začít od nuly?')){state=fresh();updateFixtures();persist();render()}
+  if(confirm('Opravdu chceš smazat databázi na serveru a začít od nuly?')){
+    state=fresh();
+    updateFixtures();
+    persist();
+  }
 });
-document.querySelector('#exportCsv').addEventListener('click',()=>{
-  let rows=[['Hrac 1','Skore 1','Skore 2','Hrac 2','Stav'],...state.matches.map(m=>[getP(m.a).name,played(m)?m.ga:'',played(m)?m.gb:'',getP(m.b).name,played(m)?'Odehrano':'Neodehrano'])];
-  let csv='\ufeff'+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(';')).join('\r\n');
-  let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download='liga.csv';a.click();URL.revokeObjectURL(a.href);
-});
-render();
 </script>
 </body></html>
