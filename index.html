@@ -1,10 +1,11 @@
 <!doctype html>
 <html lang="cs">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Stolní fotbal – Liga</title>
 <style>
 :root{color-scheme:dark;--bg:#081525;--panel:#0d2034;--line:#203b57;--text:#eef5ff;--muted:#a9bfd9;--blue:#1677f9;--red:#e0465e;--yellow:#f5c928}
+html,body{overflow-x:hidden;width:100%;position:relative}
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#071321,#0b1c30 60%,#071321);font:15px system-ui,-apple-system,sans-serif;color:var(--text)}
 header{padding:22px 26px;border-bottom:1px solid var(--line);display:flex;gap:15px;align-items:center;flex-wrap:wrap;background:#0b1b2d}
 .logo{font-size:30px}h1{font-size:clamp(22px,3vw,32px);margin:0}header p{margin:4px 0 0;color:var(--muted)}.meta{margin-left:auto;color:var(--muted)}
@@ -95,7 +96,6 @@ ul.rules-list{padding-left:20px;line-height:1.8}ul.rules-list li{margin-bottom:8
 </main>
 
 <script>
-// Tvé reálné Firebase propojení
 const firebaseConfig = {
   apiKey: "AIzaSyAPNDQJjjn34Svk6TS11L2F3_ScZTwpCrw",
   authDomain: "ligastolnifotbal.firebaseapp.com",
