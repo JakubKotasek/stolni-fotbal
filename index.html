@@ -292,7 +292,7 @@ let freePendingSave = null, freeTimer = null, freeInterval = null;
 
 function fresh(){ return {players:[],matches:[],freeMatches:[],archive:[],archivedMatches:[],currentSeason:1} }
 
-// Zásadní ochrana: Funkce, která převede cokoliv na pole. Brání chybám, když Firebase vymaže indexy.
+// Zásadní ochrana: Brání Firebase předělat indexy na objekty
 function toArray(obj) {
   if (!obj) return [];
   if (Array.isArray(obj)) return obj;
@@ -333,7 +333,7 @@ function persist(){
   });
 }
 
-// Skryté ověření pinu
+// Skryté ověření pinu pomocí Base64 ("MTU0OA==" odpovídá číslu 1548)
 function checkPin() {
   let pin = prompt("Zadej bezpečnostní PIN pro tuto akci:");
   if (pin && btoa(pin) === "MTU0OA==") return true;
@@ -345,9 +345,9 @@ function updateFixtures(){
   let m = state.matches || [];
   for(let i=0; i<state.players.length; i++){
     for(let j=i+1; j<state.players.length; j++){
-      let pA=state.players[i].id;
-      let pB=state.players[j].id;
-      let pair = m.filter(x => (x.a===pA && x.b===pB) || (x.a===pB && x.b===pA));
+      let pA = String(state.players[i].id);
+      let pB = String(state.players[j].id);
+      let pair = m.filter(x => (String(x.a)===pA && String(x.b)===pB) || (String(x.a)===pB && String(x.b)===pA));
       while(pair.length < 2){
         m.push({id:genId(), a:pA, b:pB, round:pair.length+1, ga:'', gb:''});
         pair.push(m[m.length-1]);
@@ -359,7 +359,7 @@ function updateFixtures(){
 
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function played(m){return typeof m.ga==='number' && typeof m.gb==='number'}
-function getP(id){return state.players.find(x=>x.id===id)||{name:'Neznámý',id:0}}
+function getP(id){return state.players.find(x=>String(x.id)===String(id))||{name:'Neznámý',id:0}}
 function loserPoints(g){return g<=4?0:g<=7?1:g<=9?2:0}
 
 /* ==================== PŘEPÍNÁNÍ REŽIMŮ ==================== */
@@ -433,7 +433,7 @@ function renderSelects() {
     if(!el) return;
     let oldVal = el.value;
     el.innerHTML = opts;
-    if(oldVal && state.players.find(p=>p.id==oldVal)) el.value = oldVal;
+    if(oldVal && state.players.find(p=>String(p.id)===String(oldVal))) el.value = oldVal;
   });
 
   if(state.players.length >= 2) {
@@ -449,18 +449,18 @@ function renderSelects() {
 // FORMATOVANI JMÉNA S TITULEM
 function formatName(p) {
   let titleHtml = p.activeTitle ? `<span class="title-text">${esc(p.activeTitle)}</span>` : '';
-  return `<div class="clickable-name" onclick="openProfile(${p.id})">${titleHtml}${esc(p.name)}</div>`;
+  return `<div class="clickable-name" onclick="openProfile('${p.id}')">${titleHtml}${esc(p.name)}</div>`;
 }
 
 // ------ LIGA LOGIKA ------
 function getLigaStats() {
   let stats = state.players.map(p=>({id:p.id,name:p.name,activeTitle:p.activeTitle,played:0,w:0,l:0,for:0,against:0,points:0,form:[],winStreak:0,loseStreak:0,kanar:false,badges:''}));
   stats.forEach(p => {
-    let pMatches = state.matches.filter(m => played(m) && (m.a === p.id || m.b === p.id));
-    pMatches.sort((a,b) => a.id - b.id);
+    let pMatches = state.matches.filter(m => played(m) && (String(m.a) === String(p.id) || String(m.b) === String(p.id)));
+    pMatches.sort((a,b) => Number(a.id) - Number(b.id));
     for(const m of pMatches){
       p.played++;
-      let isA = (m.a === p.id);
+      let isA = (String(m.a) === String(p.id));
       let own = isA ? m.ga : m.gb, opp = isA ? m.gb : m.ga;
       p.for+=own; p.against+=opp;
       if(own>opp){
@@ -510,7 +510,7 @@ function renderLiga(){
   let f = document.querySelector('#matchFilter').value, q = document.querySelector('#searchMatch').value.toLocaleLowerCase('cs');
   let filteredMatches = state.matches.filter(m => (f==='all' || (f==='played'?played(m):!played(m))) && `${getP(m.a).name} ${getP(m.b).name}`.toLocaleLowerCase('cs').includes(q));
   
-  document.querySelector('#matchesTable').innerHTML=`<thead><tr><th>Hráč 1</th><th>Skóre</th><th>Hráč 2</th><th>Akce</th></tr></thead><tbody>${filteredMatches.map(m=>`<tr><td>${esc(getP(m.a).name)}</td><td>${played(m)?`<b>${m.ga} : ${m.gb}</b>`:'— : —'}</td><td>${esc(getP(m.b).name)}</td><td><div class="action-group">${played(m)?`<button class="btn" onclick="editLigaMatch(${m.id})">Upravit</button><button class="btn danger" onclick="clearLigaMatch(${m.id})" title="Vymazat výsledek">✖</button>`:`<button class="btn primary" onclick="editLigaMatch(${m.id})">Zadat</button>`}</div></td></tr>`).join('')}</tbody>`;
+  document.querySelector('#matchesTable').innerHTML=`<thead><tr><th>Hráč 1</th><th>Skóre</th><th>Hráč 2</th><th>Akce</th></tr></thead><tbody>${filteredMatches.map(m=>`<tr><td>${esc(getP(m.a).name)}</td><td>${played(m)?`<b>${m.ga} : ${m.gb}</b>`:'— : —'}</td><td>${esc(getP(m.b).name)}</td><td><div class="action-group">${played(m)?`<button class="btn" onclick="editLigaMatch('${m.id}')">Upravit</button><button class="btn danger" onclick="clearLigaMatch('${m.id}')" title="Vymazat výsledek">✖</button>`:`<button class="btn primary" onclick="editLigaMatch('${m.id}')">Zadat</button>`}</div></td></tr>`).join('')}</tbody>`;
 }
 
 // ČASOMÍRA PRO LIGU
@@ -533,7 +533,7 @@ document.querySelector('#confirmLigaSaveFast').addEventListener('click', () => {
   clearTimeout(ligaTimer);
   clearInterval(ligaInterval);
   
-  if(ligaPendingSave.match.a === ligaPendingSave.winnerId) { 
+  if(String(ligaPendingSave.match.a) === String(ligaPendingSave.winnerId)) { 
     ligaPendingSave.match.ga = 10; ligaPendingSave.match.gb = ligaPendingSave.loserGoals; 
   } else { 
     ligaPendingSave.match.gb = 10; ligaPendingSave.match.ga = ligaPendingSave.loserGoals; 
@@ -548,8 +548,8 @@ document.querySelector('#confirmLigaSaveFast').addEventListener('click', () => {
 });
 
 document.querySelector('#saveLigaResult').addEventListener('click', () => {
-  let winnerId = Number(document.querySelector('#ligaWinner').value);
-  let loserId = Number(document.querySelector('#ligaLoser').value);
+  let winnerId = String(document.querySelector('#ligaWinner').value);
+  let loserId = String(document.querySelector('#ligaLoser').value);
   let loserGoalsRaw = document.querySelector('#ligaLoserGoals').value;
   let msg = document.querySelector('#ligaResultMsg');
   
@@ -561,9 +561,9 @@ document.querySelector('#saveLigaResult').addEventListener('click', () => {
 
   let m;
   if(editingLigaMatchId !== null) {
-    m = state.matches.find(x => x.id === editingLigaMatchId);
+    m = state.matches.find(x => String(x.id) === String(editingLigaMatchId));
   } else {
-    let pending = state.matches.filter(x => !played(x) && ((x.a===winnerId && x.b===loserId) || (x.a===loserId && x.b===winnerId)));
+    let pending = state.matches.filter(x => !played(x) && ((String(x.a)===winnerId && String(x.b)===loserId) || (String(x.a)===loserId && String(x.b)===winnerId)));
     if(pending.length === 0) { msg.textContent = 'Chyba: Tito dva hráči už spolu oba ligové zápasy odehráli!'; return; }
     m = pending[0];
   }
@@ -575,18 +575,18 @@ document.querySelector('#saveLigaResult').addEventListener('click', () => {
   document.querySelector('#cancelLigaSave').classList.remove('hidden');
   
   let timeLeft = 30;
-  msg.innerHTML = `⏳ Zápis čeká... Odešle se za <b style="color:var(--yellow)">${timeLeft} s</b>`;
+  msg.innerHTML = `⏳ Zápis čeká... Odešle se automaticky za <b style="color:var(--yellow)">${timeLeft} s</b>`;
   
   ligaInterval = setInterval(() => {
     timeLeft--;
     if(timeLeft > 0) {
-      msg.innerHTML = `⏳ Zápis čeká... Odešle se za <b style="color:var(--yellow)">${timeLeft} s</b>`;
+      msg.innerHTML = `⏳ Zápis čeká... Odešle se automaticky za <b style="color:var(--yellow)">${timeLeft} s</b>`;
     }
   }, 1000);
 
   ligaTimer = setTimeout(() => {
     clearInterval(ligaInterval);
-    if(ligaPendingSave.match.a === ligaPendingSave.winnerId) { 
+    if(String(ligaPendingSave.match.a) === String(ligaPendingSave.winnerId)) { 
       ligaPendingSave.match.ga = 10; ligaPendingSave.match.gb = ligaPendingSave.loserGoals; 
     } else { 
       ligaPendingSave.match.gb = 10; ligaPendingSave.match.ga = ligaPendingSave.loserGoals; 
@@ -603,7 +603,7 @@ document.querySelector('#saveLigaResult').addEventListener('click', () => {
 
 window.editLigaMatch = function(id) {
   if(!checkPin()) return;
-  let m = state.matches.find(x => x.id === id);
+  let m = state.matches.find(x => String(x.id) === String(id));
   if(!m) return;
   document.querySelector('#navLiga button[data-target="liga-enter"]').click();
   
@@ -611,8 +611,8 @@ window.editLigaMatch = function(id) {
   
   editingLigaMatchId = id;
   
-  let winnerId = m.ga === 10 ? m.a : m.b;
-  let loserId = m.ga === 10 ? m.b : m.a;
+  let winnerId = m.ga === 10 ? String(m.a) : String(m.b);
+  let loserId = m.ga === 10 ? String(m.b) : String(m.a);
   let loserGoals = m.ga === 10 ? m.gb : m.ga;
 
   document.querySelector('#ligaWinner').value = winnerId;
@@ -629,7 +629,7 @@ window.editLigaMatch = function(id) {
 window.clearLigaMatch = function(id) {
   if(!checkPin()) return;
   if(confirm('Opravdu chceš smazat výsledek tohoto zápasu? Bude se znovu tvářit jako neodehraný.')){
-    let m = state.matches.find(x => x.id === id);
+    let m = state.matches.find(x => String(x.id) === String(id));
     if(m) { m.ga = ''; m.gb = ''; persist(); }
   }
 };
@@ -650,11 +650,11 @@ document.querySelector('#searchMatch').addEventListener('input', renderLiga);
 // ------ VOLNÁ HRA LOGIKA (S ELO RATINGEM A PREDIKCÍ) ------
 function getFreeStats() {
   let fStats = state.players.map(p => ({id: p.id, name: p.name, activeTitle: p.activeTitle, played: 0, w: 0, l: 0, for: 0, against: 0, elo: 1000}));
-  let sortedFree = [...state.freeMatches].sort((a,b) => a.id - b.id);
+  let sortedFree = [...state.freeMatches].sort((a,b) => Number(a.id) - Number(b.id));
   
   sortedFree.forEach(m => {
-    let pA = fStats.find(x => x.id === m.a);
-    let pB = fStats.find(x => x.id === m.b);
+    let pA = fStats.find(x => String(x.id) === String(m.a));
+    let pB = fStats.find(x => String(x.id) === String(m.b));
     if(!pA || !pB) return;
     
     pA.played++; pB.played++;
@@ -677,14 +677,14 @@ function getFreeStats() {
 }
 
 function updateFreePrediction() {
-  let wId = Number(document.querySelector('#freeWinner').value);
-  let lId = Number(document.querySelector('#freeLoser').value);
+  let wId = String(document.querySelector('#freeWinner').value);
+  let lId = String(document.querySelector('#freeLoser').value);
   let el = document.querySelector('#freePrediction');
   if(!wId || !lId || wId === lId) { el.innerHTML = ''; return; }
   
   let fStats = getFreeStats();
-  let wStats = fStats.find(x=>x.id===wId);
-  let lStats = fStats.find(x=>x.id===lId);
+  let wStats = fStats.find(x=>String(x.id)===wId);
+  let lStats = fStats.find(x=>String(x.id)===lId);
   if(wStats && lStats) {
       let probW = 1 / (1 + Math.pow(10, (lStats.elo - wStats.elo) / 400));
       let pct = Math.round(probW*100);
@@ -700,21 +700,21 @@ function renderFree(){
   
   document.querySelector('#freeStandingsTable').innerHTML=`<thead><tr><th>#</th><th>Hráč</th><th>ELO Rating</th><th>Zápasy</th><th>Výhry</th><th>Prohry</th></tr></thead><tbody>${fStats.filter(p=>p.played>0).map((p,i)=>`<tr><td>${rankHtml(i)}</td><td>${formatName(p)}</td><td>⭐ <b>${p.elo}</b></td><td>${p.played}</td><td>${p.w}</td><td>${p.l}</td></tr>`).join('')}</tbody>`;
   
-  document.querySelector('#freeMatchesTable').innerHTML=`<thead><tr><th>Hráč 1</th><th>Skóre</th><th>Hráč 2</th><th>Akce</th></tr></thead><tbody>${[...state.freeMatches].reverse().map(m=>`<tr><td>${esc(getP(m.a).name)}</td><td><b>${m.ga} : ${m.gb}</b></td><td>${esc(getP(m.b).name)}</td><td><button class="btn danger small" onclick="removeFreeMatch(${m.id})">Smazat</button></td></tr>`).join('')}</tbody>`;
+  document.querySelector('#freeMatchesTable').innerHTML=`<thead><tr><th>Hráč 1</th><th>Skóre</th><th>Hráč 2</th><th>Akce</th></tr></thead><tbody>${[...state.freeMatches].reverse().map(m=>`<tr><td>${esc(getP(m.a).name)}</td><td><b>${m.ga} : ${m.gb}</b></td><td>${esc(getP(m.b).name)}</td><td><button class="btn danger small" onclick="removeFreeMatch('${m.id}')">Smazat</button></td></tr>`).join('')}</tbody>`;
   
   calcH2H();
 }
 
 function calcH2H(){
-  let idA = Number(document.querySelector('#h2hA').value);
-  let idB = Number(document.querySelector('#h2hB').value);
+  let idA = String(document.querySelector('#h2hA').value);
+  let idB = String(document.querySelector('#h2hB').value);
   let out = document.querySelector('#h2hOutput');
   if(!idA || !idB || idA === idB){ out.innerHTML='<p class="muted text-center">Vyber dva různé hráče.</p>'; return; }
   
-  let mutual = state.freeMatches.filter(m => (m.a===idA && m.b===idB) || (m.a===idB && m.b===idA));
+  let mutual = state.freeMatches.filter(m => (String(m.a)===idA && String(m.b)===idB) || (String(m.a)===idB && String(m.b)===idA));
   let wA=0, wB=0, gA=0, gB=0;
   mutual.forEach(m => {
-    let isA = (m.a === idA);
+    let isA = (String(m.a) === idA);
     let own = isA ? m.ga : m.gb, opp = isA ? m.gb : m.ga;
     gA += own; gB += opp;
     if(own>opp) wA++; else if(own<opp) wB++;
@@ -737,7 +737,7 @@ document.querySelector('#h2hB').addEventListener('change', calcH2H);
 window.removeFreeMatch = function(id){
   if(!checkPin()) return;
   if(confirm("Opravdu smazat tento volný zápas? Zpětně to přepočítá aktuální ELO všech hráčů.")){ 
-    state.freeMatches = state.freeMatches.filter(m=>m.id!==id); 
+    state.freeMatches = state.freeMatches.filter(m=>String(m.id)!==String(id)); 
     persist(); 
   }
 }
@@ -772,8 +772,8 @@ document.querySelector('#confirmFreeSaveFast').addEventListener('click', () => {
 });
 
 document.querySelector('#saveFreeResult').addEventListener('click', ()=>{
-  let winnerId = Number(document.querySelector('#freeWinner').value);
-  let loserId = Number(document.querySelector('#freeLoser').value);
+  let winnerId = String(document.querySelector('#freeWinner').value);
+  let loserId = String(document.querySelector('#freeLoser').value);
   let loserGoalsRaw = document.querySelector('#freeLoserGoals').value;
   let msg = document.querySelector('#freeResultMsg');
   
@@ -790,11 +790,11 @@ document.querySelector('#saveFreeResult').addEventListener('click', ()=>{
   document.querySelector('#cancelFreeSave').classList.remove('hidden');
   
   let timeLeft = 30;
-  msg.innerHTML = `⏳ Zápis čeká... Odešle se za <b style="color:var(--yellow)">${timeLeft} s</b>`;
+  msg.innerHTML = `⏳ Zápis čeká... Odešle se automaticky za <b style="color:var(--yellow)">${timeLeft} s</b>`;
   
   freeInterval = setInterval(() => {
     timeLeft--;
-    if(timeLeft > 0) msg.innerHTML = `⏳ Zápis čeká... Odešle se za <b style="color:var(--yellow)">${timeLeft} s</b>`;
+    if(timeLeft > 0) msg.innerHTML = `⏳ Zápis čeká... Odešle se automaticky za <b style="color:var(--yellow)">${timeLeft} s</b>`;
   }, 1000);
   
   freeTimer = setTimeout(() => {
@@ -822,15 +822,15 @@ document.querySelector('#archiveSeasonBtn').addEventListener('click', () => {
     
     // ROZDÁNÍ TITULŮ
     if(stats.length > 0) {
-      let p1 = state.players.find(p=>p.id === stats[0].id);
+      let p1 = state.players.find(p=>String(p.id) === String(stats[0].id));
       if(p1) { p1.titles = p1.titles || []; p1.titles.push(`🥇 Zlatý mistr S${state.currentSeason}`); p1.activeTitle = p1.titles[p1.titles.length-1]; }
     }
     if(stats.length > 1) {
-      let p2 = state.players.find(p=>p.id === stats[1].id);
+      let p2 = state.players.find(p=>String(p.id) === String(stats[1].id));
       if(p2) { p2.titles = p2.titles || []; p2.titles.push(`🥈 Stříbro S${state.currentSeason}`); }
     }
     if(stats.length > 2) {
-      let p3 = state.players.find(p=>p.id === stats[2].id);
+      let p3 = state.players.find(p=>String(p.id) === String(stats[2].id));
       if(p3) { p3.titles = p3.titles || []; p3.titles.push(`🥉 Bronz S${state.currentSeason}`); }
     }
 
@@ -876,19 +876,18 @@ function renderArchive() {
 
 // ------ PROFIL HRÁČE (CELOŽIVOTNÍ STATY) ------
 window.openProfile = function(id) {
-  let p = state.players.find(x => x.id === id);
+  let p = state.players.find(x => String(x.id) === String(id));
   if(!p) return;
 
-  // Spojíme všechny odehrané zápasy (aktuální liga, staré ligy, volná hra)
   let allMatches = [ ...state.matches.filter(played), ...state.freeMatches, ...(state.archivedMatches || []) ];
-  let pMatches = allMatches.filter(m => m.a === id || m.b === id);
+  let pMatches = allMatches.filter(m => String(m.a) === String(id) || String(m.b) === String(id));
   
   let stats = { played:0, wins:0, goals:0, kanars:0, against: {} };
   
   pMatches.forEach(m => {
     stats.played++;
-    let isA = (m.a === id);
-    let oppId = isA ? m.b : m.a;
+    let isA = (String(m.a) === String(id));
+    let oppId = isA ? String(m.b) : String(m.a);
     let ownG = isA ? m.ga : m.gb;
     let oppG = isA ? m.gb : m.ga;
     
@@ -907,8 +906,8 @@ window.openProfile = function(id) {
     let oppStats = stats.against[oppId];
     if(oppStats.matches >= 3) {
       let wr = (oppStats.wins / oppStats.matches) * 100;
-      if(wr > vRate) { vRate = wr; victim = getP(Number(oppId)).name; }
-      if(wr < nRate) { nRate = wr; nemesis = getP(Number(oppId)).name; }
+      if(wr > vRate) { vRate = wr; victim = getP(oppId).name; }
+      if(wr < nRate) { nRate = wr; nemesis = getP(oppId).name; }
     }
   });
 
@@ -921,7 +920,6 @@ window.openProfile = function(id) {
   document.getElementById('mVictim').textContent = victim;
   document.getElementById('mNemesis').textContent = nemesis;
 
-  // Vyhodnocení Levelovacích Odznaků
   let bHTML = '';
   if(stats.goals >= 300) bHTML += `<div class="badge-prog">⚽ <div><b>Kanonýr III</b><br><small>300+ gólů</small></div></div>`;
   else if(stats.goals >= 150) bHTML += `<div class="badge-prog">⚽ <div><b>Kanonýr II</b><br><small>150+ gólů</small></div></div>`;
@@ -949,6 +947,10 @@ window.closeProfile = function() {
 
 // ------ SPRÁVA HRÁČŮ ------
 function renderPlayers(){
+  // Ochrana: Nepřekresluj, pokud zrovna uživatel píše, aby neztratil kurzor
+  if (document.activeElement && (document.activeElement.classList.contains('p-name') || document.activeElement.classList.contains('p-title'))) {
+    return;
+  }
   document.querySelector('#playerInputs').innerHTML=state.players.map((p)=>`
     <div class="player-row">
       <input class="p-name" data-id="${p.id}" maxlength="40" value="${esc(p.name)}" placeholder="Jméno hráče">
@@ -958,7 +960,7 @@ function renderPlayers(){
           ${p.titles.map(t=>`<option value="${esc(t)}" ${p.activeTitle===t?'selected':''}>${esc(t)}</option>`).join('')}
         </select>
       ` : ''}
-      <button class="btn danger" onclick="removePlayer(${p.id})" title="Odstranit hráče">✖</button>
+      <button class="btn danger" onclick="removePlayer('${p.id}')" title="Odstranit hráče">✖</button>
     </div>
   `).join('');
 }
@@ -967,9 +969,9 @@ window.removePlayer=function(id){
   if(!checkPin()) return;
   if(confirm('Opravdu chceš tohoto hráče smazat? Zmizí i všechny jeho zápasy.')){
     if(confirm('Jsi si NAPROSTO JISTÝ? Smazání se provede online a nenávratně odstraní výsledky!')){
-      state.players=state.players.filter(p=>p.id!==id);
-      state.matches=state.matches.filter(m=>m.a!==id&&m.b!==id);
-      state.freeMatches=state.freeMatches.filter(m=>m.a!==id&&m.b!==id);
+      state.players=state.players.filter(p=>String(p.id)!==String(id));
+      state.matches=state.matches.filter(m=>String(m.a)!==String(id)&&String(m.b)!==String(id));
+      state.freeMatches=state.freeMatches.filter(m=>String(m.a)!==String(id)&&String(m.b)!==String(id));
       persist();
     }
   }
@@ -979,16 +981,17 @@ document.querySelector('#addPlayer').addEventListener('click',()=>{
   state.players.push({id:genId(),name:`Hráč ${state.players.length+1}`});
   updateFixtures();
   persist();
+  setTimeout(renderPlayers, 100);
 });
 
 document.querySelector('#saveNames').addEventListener('click',()=>{
   document.querySelectorAll('.p-name').forEach(inp=>{
-    let p=state.players.find(x=>x.id===Number(inp.dataset.id));
+    let p=state.players.find(x=>String(x.id)===String(inp.dataset.id));
     if(p) p.name=inp.value.trim()||p.name;
   });
   
   document.querySelectorAll('.p-title').forEach(sel=>{
-    let p=state.players.find(x=>x.id===Number(sel.dataset.id));
+    let p=state.players.find(x=>String(x.id)===String(sel.dataset.id));
     if(p) p.activeTitle=sel.value;
   });
 
