@@ -35,7 +35,6 @@ nav button,.btn{border:1px solid #31516f;background:#122941;color:var(--text);pa
 nav button.active,.btn.primary{background:var(--blue);border-color:var(--blue);color:white}button:hover{filter:brightness(1.12)}
 .btn.danger{background:var(--red);border-color:var(--red);color:white}
 .btn.danger-outline{background:transparent;border-color:var(--red);color:var(--red)}
-.btn.success{background:var(--green);border-color:var(--green);color:white}
 
 main{padding:20px;max-width:1500px;margin:auto}.grid{display:grid;gap:18px}.panel{background:linear-gradient(160deg,#0e2237,#0a1a2b);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px;transition:background 0.3s}
 .panel h2{font-size:18px;margin:0;padding:15px 18px;border-bottom:1px solid var(--line)}.content{padding:16px}.scroll{overflow:auto}
@@ -291,7 +290,7 @@ let editingLigaMatchId = null;
 let ligaPendingSave = null, ligaTimer = null, ligaInterval = null;
 let freePendingSave = null, freeTimer = null, freeInterval = null;
 
-function fresh(){ return {players:[{id:1,name:"Hráč 1"},{id:2,name:"Hráč 2"}],matches:[],freeMatches:[],archive:[],archivedMatches:[],currentSeason:1} }
+function fresh(){ return {players:[],matches:[],freeMatches:[],archive:[],archivedMatches:[],currentSeason:1} }
 
 db.ref('foosballLeague').on('value', (snapshot) => {
   const data = snapshot.val();
@@ -528,6 +527,7 @@ document.querySelector('#confirmLigaSaveFast').addEventListener('click', () => {
     ligaPendingSave.match.gb = 10; ligaPendingSave.match.ga = ligaPendingSave.loserGoals; 
   }
   persist();
+  document.querySelector('#ligaLoserGoals').value = '';
   let msg = document.querySelector('#ligaResultMsg');
   msg.textContent = `✅ Uloženo ihned: ${getP(ligaPendingSave.winnerId).name} 10:${ligaPendingSave.loserGoals} ${getP(ligaPendingSave.loserId).name}`;
   resetLigaSaveUI();
@@ -581,6 +581,7 @@ document.querySelector('#saveLigaResult').addEventListener('click', () => {
     }
     
     persist();
+    document.querySelector('#ligaLoserGoals').value = '';
     msg.textContent = `✅ Uloženo: ${getP(ligaPendingSave.winnerId).name} 10:${ligaPendingSave.loserGoals} ${getP(ligaPendingSave.loserId).name}`;
     resetLigaSaveUI();
     cancelLigaEditState();
@@ -589,12 +590,11 @@ document.querySelector('#saveLigaResult').addEventListener('click', () => {
 });
 
 window.editLigaMatch = function(id) {
-  if(!checkPin()) return; // Zabezpečení proti neoprávněné úpravě
+  if(!checkPin()) return;
   let m = state.matches.find(x => x.id === id);
   if(!m) return;
   document.querySelector('#navLiga button[data-target="liga-enter"]').click();
   
-  // Zrušíme případnou běžící časomíru
   clearTimeout(ligaTimer); clearInterval(ligaInterval); resetLigaSaveUI(); document.querySelector('#ligaResultMsg').textContent = '';
   
   editingLigaMatchId = id;
