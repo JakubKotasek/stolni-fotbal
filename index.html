@@ -53,6 +53,8 @@ ul.rules-list{padding-left:20px;line-height:1.8;margin-top:0}ul.rules-list li{ma
 .warning-box{background:rgba(224, 70, 94, 0.1);border:1px solid var(--red);padding:10px;border-radius:8px;color:#ffb7bd;font-weight:bold;text-align:center}
 .archive-season {background:rgba(0,0,0,0.2); border:1px solid var(--line); border-radius:10px; margin-bottom:20px; overflow:hidden;}
 .archive-season h3 {margin:0; padding:12px 16px; background:rgba(0,0,0,0.3); border-bottom:1px solid var(--line); font-size:16px;}
+.encyclopedia h3 {color:var(--yellow);margin-top:25px;margin-bottom:10px}
+.encyclopedia p, .encyclopedia ul {margin-top:0;line-height:1.6}
 
 @media(max-width:900px){.statcards{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:520px){main{padding:10px}header{padding:12px 15px}.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}.statcards{grid-template-columns:1fr 1fr}.action-group{display:flex;gap:5px;justify-content:center}}
@@ -82,7 +84,8 @@ ul.rules-list{padding-left:20px;line-height:1.8;margin-top:0}ul.rules-list li{ma
   <button data-target="liga-matches">📅 Rozpis a Historie</button>
   <button data-target="liga-stats">📊 Odznaky a Forma</button>
   <button data-target="liga-archive">📁 Archiv sezón</button>
-  <button data-target="shared-players">👥 Nastavení</button>
+  <button data-target="shared-players">⚙️ Nastavení</button>
+  <button data-target="shared-help">💡 Nápověda</button>
 </nav>
 
 <!-- PODMENU: VOLNÁ HRA -->
@@ -90,7 +93,8 @@ ul.rules-list{padding-left:20px;line-height:1.8;margin-top:0}ul.rules-list li{ma
   <button class="active" data-target="free-enter">⚔️ Zapsat volný zápas</button>
   <button data-target="free-h2h">👀 Vzájemná bilance (H2H)</button>
   <button data-target="free-standings">📈 ELO Žebříček</button>
-  <button data-target="shared-players">👥 Nastavení</button>
+  <button data-target="shared-players">⚙️ Nastavení</button>
+  <button data-target="shared-help">💡 Nápověda</button>
 </nav>
 
 <main>
@@ -111,10 +115,11 @@ ul.rules-list{padding-left:20px;line-height:1.8;margin-top:0}ul.rules-list li{ma
         <div class="wide"><label>Góly poraženého</label><input id="ligaLoserGoals" type="number" min="0" max="9" value="0"></div>
         <div class="wide actions">
           <button class="btn primary" id="saveLigaResult">Uložit výsledek do ligy</button>
+          <button class="btn danger hidden" id="cancelLigaSave">Zastavit odpočet (Zrušit)</button>
           <button class="btn danger-outline hidden" id="cancelLigaEdit">Zrušit úpravy</button>
         </div>
       </div>
-      <div id="ligaResultMsg" class="status" style="margin-top:15px;"></div>
+      <div id="ligaResultMsg" class="status" style="margin-top:15px; font-size:15px;"></div>
     </div></div>
   </section>
 
@@ -127,15 +132,12 @@ ul.rules-list{padding-left:20px;line-height:1.8;margin-top:0}ul.rules-list li{ma
 
   <section id="liga-stats" class="hidden">
     <div class="panel"><h2>📊 Podrobné statistiky & Odznaky</h2><div class="content">
-      <p class="small">🔥 V laufu (3+ výher) | 🥶 Krize (3+ proher) | 🛡️ Zeď (nejlepší obrana) | 🥯 Kanár (výhra 10:0)</p>
       <div class="scroll"><table id="statsTable"></table></div>
     </div></div>
   </section>
 
   <section id="liga-archive" class="hidden">
-    <div class="panel"><h2>📁 Síň slávy (Archiv sezón)</h2><div class="content" id="archiveContent">
-      <!-- Generováno JS -->
-    </div></div>
+    <div class="panel"><h2>📁 Síň slávy (Archiv sezón)</h2><div class="content" id="archiveContent"></div></div>
   </section>
 </div>
 
@@ -148,9 +150,12 @@ ul.rules-list{padding-left:20px;line-height:1.8;margin-top:0}ul.rules-list li{ma
         <div><label>Vítěz (automaticky 10 gólů)</label><select id="freeWinner"></select></div>
         <div><label>Poražený</label><select id="freeLoser"></select></div>
         <div class="wide"><label>Góly poraženého</label><input id="freeLoserGoals" type="number" min="0" max="9" value="0"></div>
-        <div class="wide actions"><button class="btn primary" id="saveFreeResult">Uložit volný zápas</button></div>
+        <div class="wide actions">
+          <button class="btn primary" id="saveFreeResult">Uložit volný zápas</button>
+          <button class="btn danger hidden" id="cancelFreeSave">Zastavit odpočet (Zrušit)</button>
+        </div>
       </div>
-      <div id="freeResultMsg" class="status" style="margin-top:15px;"></div>
+      <div id="freeResultMsg" class="status" style="margin-top:15px; font-size:15px;"></div>
     </div></div>
   </section>
 
@@ -171,10 +176,10 @@ ul.rules-list{padding-left:20px;line-height:1.8;margin-top:0}ul.rules-list li{ma
   </section>
 </div>
 
-<!-- ==================== SPOLEČNÉ (HRÁČI A PRAVIDLA) ==================== -->
+<!-- ==================== SPOLEČNÉ (HRÁČI, NASTAVENÍ A ENCYKLOPEDIE) ==================== -->
 <div id="wrapperShared" class="hidden">
-  <section id="shared-players">
-    <div class="panel"><h2>👥 Správa hráčů a Nastavení</h2><div class="content">
+  <section id="shared-players" class="hidden">
+    <div class="panel"><h2>⚙️ Správa hráčů a Nastavení</h2><div class="content">
       <div id="playerInputs"></div>
       <div class="actions" style="margin-top:15px;"><button class="btn" id="addPlayer">➕ Přidat dalšího hráče</button><button class="btn primary" id="saveNames">💾 Uložit úpravy jmen</button></div>
       <div id="playersMsg" class="status" style="margin-top:10px;"></div>
@@ -186,6 +191,36 @@ ul.rules-list{padding-left:20px;line-height:1.8;margin-top:0}ul.rules-list li{ma
 
       <hr style="border:0;border-top:1px solid var(--line);margin:30px 0 20px">
       <button class="btn danger-outline" id="resetAll">⚠️ Smazat úplně celou databázi</button>
+    </div></div>
+  </section>
+
+  <section id="shared-help" class="hidden">
+    <div class="panel"><h2>💡 Encyklopedie a Pravidla</h2><div class="content encyclopedia">
+      <h3>📈 Co je to ELO Rating (Žebříček síly)?</h3>
+      <p>Ve Volné hře používáme profesionální šachový systém ELO. Každý hráč začíná na hodnotě 1000 bodů. Zde nezáleží jen na tom, jestli vyhraješ, ale <b>KOHO</b> porazíš. Pokud porazíš lídra tabulky, získáš obrovskou porci bodů. Pokud naopak prohraješ se slabým outsiderem, hodně bodů ztratíš. Tento žebříček nejdokonaleji odráží aktuální formu hráče bez ohledu na to, kolik zápasů stihl odehrát.</p>
+
+      <h3>⏱️ Časomíra zápisu (30 s)</h3>
+      <p>Zapsat překlep zamrzí. Proto při ukládání výsledku (jak v lize, tak ve volné hře) neodesíláme data na server okamžitě. Spustí se <b>30vteřinový odpočet</b>. Pokud si uvědomíš chybu, stačí během této doby kliknout na červené tlačítko <b>Zastavit odpočet</b> a zápis se stornuje. Pokud nic neuděláš, po 30 vteřinách se výsledek bezpečně uloží.</p>
+
+      <h3>🔒 Ochrana PINem</h3>
+      <p>Aby nikdo v hospodě s půjčeným telefonem omylem nesmazal celou ligu, jsou nebezpečné akce (smazání odehraného zápasu, vymazání hráče, uzavření sezóny a reset databáze) zabezpečeny PIN kódem. <b>Váš PIN je: 1548</b>.</p>
+
+      <h3>🏅 Virtuální odznaky (Liga)</h3>
+      <ul>
+        <li>🔥 <b>V laufu:</b> Hráč má sérii alespoň 3 výher v řadě.</li>
+        <li>🥶 <b>Krize:</b> Hráč má sérii alespoň 3 proher v řadě.</li>
+        <li>🛡️ <b>Železná zeď:</b> Hráč s aktuálně nejlepší obranou (dostává průměrně nejméně gólů).</li>
+        <li>🥯 <b>Kanár:</b> Hráč někoho rozdrtil potupným výsledkem 10:0.</li>
+      </ul>
+
+      <h3>📖 Oficiální pravidla fotbálku</h3>
+      <ul class="rules-list">
+        <li>V Lize hraje každý s každým přesně <b>dva zápasy</b>. Volná hra (přáteláky) je neomezená.</li>
+        <li>Ten, kdo dostal gól, má právo <b>vhazovat míček</b> zpět do hry.</li>
+        <li><b>Neplatí přímý gól po vhození.</b> Před střelou na bránu musí proběhnout minimálně jeden další dotyk stejného týmu.</li>
+        <li>Zápas se hraje vždy do <b>10 gólů</b>.</li>
+      </ul>
+      <div class="rules"><b>Bodování v Lize:</b><br><span>Výhra (10 gólů)</span> = 3 body<br><span>Prohra s 8–9 góly</span> = 2 body<br><span>Prohra s 5–7 góly</span> = 1 bod<br><span>Prohra s 0–4 góly</span> = 0 bodů</div>
     </div></div>
   </section>
 </div>
@@ -211,6 +246,10 @@ let state = { players: [], matches: [], freeMatches: [], archive: [], currentSea
 let dataLoaded = false;
 let currentMode = 'liga';
 let editingLigaMatchId = null;
+
+// Časovače
+let ligaPendingSave = null, ligaTimer = null, ligaInterval = null;
+let freePendingSave = null, freeTimer = null, freeInterval = null;
 
 function fresh(){ return {players:[{id:1,name:"Hráč 1"},{id:2,name:"Hráč 2"}],matches:[],freeMatches:[],archive:[],currentSeason:1} }
 
@@ -239,6 +278,13 @@ function persist(){
     archive: state.archive,
     currentSeason: state.currentSeason
   });
+}
+
+function checkPin() {
+  let pin = prompt("Zadej bezpečnostní PIN pro tuto akci:");
+  if (pin === "1548") return true;
+  if (pin !== null) alert("Nesprávný PIN! Akce zrušena.");
+  return false;
 }
 
 function updateFixtures(){
@@ -302,9 +348,9 @@ document.querySelectorAll('.subnav button').forEach(b => {
     let targetId = b.dataset.target;
     document.querySelectorAll('#wrapperLiga > section, #wrapperFree > section, #wrapperShared > section').forEach(sec => sec.classList.add('hidden'));
     
-    if(targetId === 'shared-players') {
+    if(targetId.startsWith('shared-')) {
       document.getElementById('wrapperShared').classList.remove('hidden');
-      document.getElementById('shared-players').classList.remove('hidden');
+      document.getElementById(targetId).classList.remove('hidden');
     } else {
       document.getElementById('wrapperShared').classList.add('hidden');
       document.getElementById(targetId).classList.remove('hidden');
@@ -406,6 +452,20 @@ function renderLiga(){
   document.querySelector('#matchesTable').innerHTML=`<thead><tr><th>Hráč 1</th><th>Skóre</th><th>Hráč 2</th><th>Akce</th></tr></thead><tbody>${filteredMatches.map(m=>`<tr><td>${esc(getP(m.a).name)}</td><td>${played(m)?`<b>${m.ga} : ${m.gb}</b>`:'— : —'}</td><td>${esc(getP(m.b).name)}</td><td><div class="action-group">${played(m)?`<button class="btn" onclick="editLigaMatch(${m.id})">Upravit</button><button class="btn danger" onclick="clearLigaMatch(${m.id})" title="Vymazat výsledek">✖</button>`:`<button class="btn primary" onclick="editLigaMatch(${m.id})">Zadat</button>`}</div></td></tr>`).join('')}</tbody>`;
 }
 
+// ČASOMÍRA PRO LIGU
+function resetLigaSaveUI() {
+  document.querySelector('#saveLigaResult').classList.remove('hidden');
+  document.querySelector('#cancelLigaSave').classList.add('hidden');
+}
+
+document.querySelector('#cancelLigaSave').addEventListener('click', () => {
+  clearTimeout(ligaTimer);
+  clearInterval(ligaInterval);
+  ligaPendingSave = null;
+  document.querySelector('#ligaResultMsg').textContent = 'Zápis zrušen.';
+  resetLigaSaveUI();
+});
+
 document.querySelector('#saveLigaResult').addEventListener('click', () => {
   let winnerId = Number(document.querySelector('#ligaWinner').value);
   let loserId = Number(document.querySelector('#ligaLoser').value);
@@ -424,19 +484,46 @@ document.querySelector('#saveLigaResult').addEventListener('click', () => {
     m = pending[0];
   }
 
-  if(m.a === winnerId) { m.ga = 10; m.gb = loserGoals; }
-  else { m.gb = 10; m.ga = loserGoals; }
+  // Spuštění časomíry
+  ligaPendingSave = { match: m, winnerId: winnerId, loserId: loserId, loserGoals: loserGoals };
+  
+  document.querySelector('#saveLigaResult').classList.add('hidden');
+  document.querySelector('#cancelLigaSave').classList.remove('hidden');
+  
+  let timeLeft = 30;
+  msg.innerHTML = `⏳ Zápis čeká... Odešle se automaticky za <b style="color:var(--yellow)">${timeLeft} s</b>`;
+  
+  ligaInterval = setInterval(() => {
+    timeLeft--;
+    if(timeLeft > 0) {
+      msg.innerHTML = `⏳ Zápis čeká... Odešle se automaticky za <b style="color:var(--yellow)">${timeLeft} s</b>`;
+    }
+  }, 1000);
 
-  persist();
-  msg.textContent=`Ligový výsledek uložen: ${getP(winnerId).name} 10:${loserGoals} ${getP(loserId).name}`;
-  cancelLigaEditState();
-  setTimeout(()=>msg.textContent='', 4000);
+  ligaTimer = setTimeout(() => {
+    clearInterval(ligaInterval);
+    if(ligaPendingSave.match.a === ligaPendingSave.winnerId) { 
+      ligaPendingSave.match.ga = 10; ligaPendingSave.match.gb = ligaPendingSave.loserGoals; 
+    } else { 
+      ligaPendingSave.match.gb = 10; ligaPendingSave.match.ga = ligaPendingSave.loserGoals; 
+    }
+    
+    persist();
+    msg.textContent = `✅ Uloženo: ${getP(ligaPendingSave.winnerId).name} 10:${ligaPendingSave.loserGoals} ${getP(ligaPendingSave.loserId).name}`;
+    resetLigaSaveUI();
+    cancelLigaEditState();
+    setTimeout(()=>msg.textContent='', 4000);
+  }, 30000);
 });
 
 window.editLigaMatch = function(id) {
   let m = state.matches.find(x => x.id === id);
   if(!m) return;
   document.querySelector('#navLiga button[data-target="liga-enter"]').click();
+  
+  // Zrušíme případnou běžící časomíru
+  clearTimeout(ligaTimer); clearInterval(ligaInterval); resetLigaSaveUI(); document.querySelector('#ligaResultMsg').textContent = '';
+  
   editingLigaMatchId = id;
   
   let winnerId = m.ga === 10 ? m.a : m.b;
@@ -455,6 +542,7 @@ window.editLigaMatch = function(id) {
 };
 
 window.clearLigaMatch = function(id) {
+  if(!checkPin()) return;
   if(confirm('Opravdu chceš smazat výsledek tohoto zápasu? Bude se znovu tvářit jako neodehraný.')){
     let m = state.matches.find(x => x.id === id);
     if(m) { m.ga = ''; m.gb = ''; persist(); }
@@ -477,8 +565,6 @@ document.querySelector('#searchMatch').addEventListener('input', renderLiga);
 // ------ VOLNÁ HRA LOGIKA (S ELO RATINGEM) ------
 function getFreeStats() {
   let fStats = state.players.map(p => ({id: p.id, name: p.name, played: 0, w: 0, l: 0, for: 0, against: 0, elo: 1000}));
-  
-  // Zápasy pro výpočet ELO musíme počítat chronologicky od začátku
   let sortedFree = [...state.freeMatches].sort((a,b) => a.id - b.id);
   
   sortedFree.forEach(m => {
@@ -494,7 +580,6 @@ function getFreeStats() {
     let wB = m.gb > m.ga ? 1 : 0;
     if(wA) { pA.w++; pB.l++; } else { pB.w++; pA.l++; }
     
-    // ELO Výpočet
     let expectedA = 1 / (1 + Math.pow(10, (pB.elo - pA.elo) / 400));
     let expectedB = 1 / (1 + Math.pow(10, (pA.elo - pB.elo) / 400));
     let k = 32;
@@ -502,14 +587,12 @@ function getFreeStats() {
     pB.elo = Math.round(pB.elo + k * (wB - expectedB));
   });
 
-  // Řazení podle ELO a skóre
   fStats.sort((a,b) => b.elo - a.elo || (b.for - b.against) - (a.for - a.against));
   return fStats;
 }
 
 function renderFree(){
   let fStats = getFreeStats();
-  
   let rankHtml = i => `<span class="rank ${i===0?'r1':i===1?'r2':i===2?'r3':''}">${i+1}</span>`;
   
   document.querySelector('#freeStandingsTable').innerHTML=`<thead><tr><th>#</th><th>Hráč</th><th>ELO Rating</th><th>Zápasy</th><th>Výhry</th><th>Prohry</th></tr></thead><tbody>${fStats.filter(p=>p.played>0).map((p,i)=>`<tr><td>${rankHtml(i)}</td><td>${esc(p.name)}</td><td>⭐ <b>${p.elo}</b></td><td>${p.played}</td><td>${p.w}</td><td>${p.l}</td></tr>`).join('')}</tbody>`;
@@ -549,11 +632,26 @@ document.querySelector('#h2hA').addEventListener('change', calcH2H);
 document.querySelector('#h2hB').addEventListener('change', calcH2H);
 
 window.removeFreeMatch = function(id){
+  if(!checkPin()) return;
   if(confirm("Opravdu smazat tento volný zápas? Zpětně to přepočítá aktuální ELO všech hráčů.")){ 
     state.freeMatches = state.freeMatches.filter(m=>m.id!==id); 
     persist(); 
   }
 }
+
+// ČASOMÍRA PRO VOLNOU HRU
+function resetFreeSaveUI() {
+  document.querySelector('#saveFreeResult').classList.remove('hidden');
+  document.querySelector('#cancelFreeSave').classList.add('hidden');
+}
+
+document.querySelector('#cancelFreeSave').addEventListener('click', () => {
+  clearTimeout(freeTimer);
+  clearInterval(freeInterval);
+  freePendingSave = null;
+  document.querySelector('#freeResultMsg').textContent = 'Zápis zrušen.';
+  resetFreeSaveUI();
+});
 
 document.querySelector('#saveFreeResult').addEventListener('click', ()=>{
   let winnerId = Number(document.querySelector('#freeWinner').value);
@@ -564,14 +662,33 @@ document.querySelector('#saveFreeResult').addEventListener('click', ()=>{
   if(winnerId===loserId){ msg.textContent='Hráč nemůže hrát sám se sebou.'; return; }
   if(!Number.isInteger(loserGoals)||loserGoals<0||loserGoals>9){ msg.textContent='Góly poraženého musí být od 0 do 9.'; return; }
   
-  state.freeMatches.push({ id:Date.now(), a:winnerId, b:loserId, ga:10, gb:loserGoals });
-  persist();
-  msg.textContent=`Uloženo: ${getP(winnerId).name} 10:${loserGoals} ${getP(loserId).name}`;
-  setTimeout(()=>msg.textContent='', 3000);
+  freePendingSave = { winnerId: winnerId, loserId: loserId, loserGoals: loserGoals };
+  
+  document.querySelector('#saveFreeResult').classList.add('hidden');
+  document.querySelector('#cancelFreeSave').classList.remove('hidden');
+  
+  let timeLeft = 30;
+  msg.innerHTML = `⏳ Zápis čeká... Odešle se automaticky za <b style="color:var(--yellow)">${timeLeft} s</b>`;
+  
+  freeInterval = setInterval(() => {
+    timeLeft--;
+    if(timeLeft > 0) msg.innerHTML = `⏳ Zápis čeká... Odešle se automaticky za <b style="color:var(--yellow)">${timeLeft} s</b>`;
+  }, 1000);
+  
+  freeTimer = setTimeout(() => {
+    clearInterval(freeInterval);
+    state.freeMatches.push({ id:Date.now(), a:freePendingSave.winnerId, b:freePendingSave.loserId, ga:10, gb:freePendingSave.loserGoals });
+    persist();
+    msg.textContent = `✅ Uloženo: ${getP(freePendingSave.winnerId).name} 10:${freePendingSave.loserGoals} ${getP(freePendingSave.loserId).name}`;
+    resetFreeSaveUI();
+    setTimeout(()=>msg.textContent='', 3000);
+  }, 30000);
 });
 
 // ------ ARCHIV SEZÓN ------
 document.querySelector('#archiveSeasonBtn').addEventListener('click', () => {
+  if(!checkPin()) return;
+  
   let ms = state.matches.filter(played).length;
   if(ms === 0) { alert('Nelze archivovat prázdnou sezónu.'); return; }
   
@@ -588,7 +705,6 @@ document.querySelector('#archiveSeasonBtn').addEventListener('click', () => {
     
     state.currentSeason++;
     
-    // Vyčistit ligové zápasy a vygenerovat nové prázdné
     state.matches = [];
     updateFixtures();
     persist();
@@ -619,7 +735,6 @@ function renderArchive() {
   `).join('');
 }
 
-
 // ------ SPRÁVA HRÁČŮ ------
 function renderPlayers(){
   document.querySelector('#playerInputs').innerHTML=state.players.map((p)=>`
@@ -631,6 +746,7 @@ function renderPlayers(){
 }
 
 window.removePlayer=function(id){
+  if(!checkPin()) return;
   if(confirm('Opravdu chceš tohoto hráče smazat? Zmizí i všechny jeho zápasy.')){
     if(confirm('Jsi si NAPROSTO JISTÝ? Smazání se provede online a nenávratně odstraní výsledky!')){
       state.players=state.players.filter(p=>p.id!==id);
@@ -659,6 +775,7 @@ document.querySelector('#saveNames').addEventListener('click',()=>{
 });
 
 document.querySelector('#resetAll').addEventListener('click',()=>{
+  if(!checkPin()) return;
   if(confirm('Opravdu chceš smazat databázi na serveru a začít úplně od nuly? Smaže se liga, archiv i Volná hra.')){
     state=fresh();
     updateFixtures();
