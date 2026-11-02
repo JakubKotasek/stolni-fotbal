@@ -292,14 +292,26 @@ let freePendingSave = null, freeTimer = null, freeInterval = null;
 
 function fresh(){ return {players:[],matches:[],freeMatches:[],archive:[],archivedMatches:[],currentSeason:1} }
 
+// Zásadní ochrana: Funkce, která převede cokoliv na pole. Brání chybám, když Firebase vymaže indexy.
+function toArray(obj) {
+  if (!obj) return [];
+  if (Array.isArray(obj)) return obj;
+  return Object.values(obj);
+}
+
+// Zásadní ochrana 2: Čistá generace ID
+function genId() {
+  return Date.now() + Math.floor(Math.random() * 100000);
+}
+
 db.ref('foosballLeague').on('value', (snapshot) => {
   const data = snapshot.val();
   if (data) {
-    state.players = data.players || [];
-    state.matches = data.matches || [];
-    state.freeMatches = data.freeMatches || [];
-    state.archive = data.archive || [];
-    state.archivedMatches = data.archivedMatches || [];
+    state.players = toArray(data.players);
+    state.matches = toArray(data.matches);
+    state.freeMatches = toArray(data.freeMatches);
+    state.archive = toArray(data.archive);
+    state.archivedMatches = toArray(data.archivedMatches);
     state.currentSeason = data.currentSeason || 1;
   } else {
     state = fresh();
@@ -321,7 +333,7 @@ function persist(){
   });
 }
 
-// Skryté ověření pinu pomocí Base64 ("MTU0OA==" odpovídá číslu 1548)
+// Skryté ověření pinu
 function checkPin() {
   let pin = prompt("Zadej bezpečnostní PIN pro tuto akci:");
   if (pin && btoa(pin) === "MTU0OA==") return true;
@@ -337,7 +349,7 @@ function updateFixtures(){
       let pB=state.players[j].id;
       let pair = m.filter(x => (x.a===pA && x.b===pB) || (x.a===pB && x.b===pA));
       while(pair.length < 2){
-        m.push({id:Date.now()+Math.random(), a:pA, b:pB, round:pair.length+1, ga:'', gb:''});
+        m.push({id:genId(), a:pA, b:pB, round:pair.length+1, ga:'', gb:''});
         pair.push(m[m.length-1]);
       }
     }
@@ -563,12 +575,12 @@ document.querySelector('#saveLigaResult').addEventListener('click', () => {
   document.querySelector('#cancelLigaSave').classList.remove('hidden');
   
   let timeLeft = 30;
-  msg.innerHTML = `⏳ Zápis čeká... Odešle se automaticky za <b style="color:var(--yellow)">${timeLeft} s</b>`;
+  msg.innerHTML = `⏳ Zápis čeká... Odešle se za <b style="color:var(--yellow)">${timeLeft} s</b>`;
   
   ligaInterval = setInterval(() => {
     timeLeft--;
     if(timeLeft > 0) {
-      msg.innerHTML = `⏳ Zápis čeká... Odešle se automaticky za <b style="color:var(--yellow)">${timeLeft} s</b>`;
+      msg.innerHTML = `⏳ Zápis čeká... Odešle se za <b style="color:var(--yellow)">${timeLeft} s</b>`;
     }
   }, 1000);
 
@@ -750,7 +762,7 @@ document.querySelector('#confirmFreeSaveFast').addEventListener('click', () => {
   clearTimeout(freeTimer);
   clearInterval(freeInterval);
   
-  state.freeMatches.push({ id:Date.now(), a:freePendingSave.winnerId, b:freePendingSave.loserId, ga:10, gb:freePendingSave.loserGoals });
+  state.freeMatches.push({ id:genId(), a:freePendingSave.winnerId, b:freePendingSave.loserId, ga:10, gb:freePendingSave.loserGoals });
   persist();
   document.querySelector('#freeLoserGoals').value = '';
   let msg = document.querySelector('#freeResultMsg');
@@ -778,16 +790,16 @@ document.querySelector('#saveFreeResult').addEventListener('click', ()=>{
   document.querySelector('#cancelFreeSave').classList.remove('hidden');
   
   let timeLeft = 30;
-  msg.innerHTML = `⏳ Zápis čeká... Odešle se automaticky za <b style="color:var(--yellow)">${timeLeft} s</b>`;
+  msg.innerHTML = `⏳ Zápis čeká... Odešle se za <b style="color:var(--yellow)">${timeLeft} s</b>`;
   
   freeInterval = setInterval(() => {
     timeLeft--;
-    if(timeLeft > 0) msg.innerHTML = `⏳ Zápis čeká... Odešle se automaticky za <b style="color:var(--yellow)">${timeLeft} s</b>`;
+    if(timeLeft > 0) msg.innerHTML = `⏳ Zápis čeká... Odešle se za <b style="color:var(--yellow)">${timeLeft} s</b>`;
   }, 1000);
   
   freeTimer = setTimeout(() => {
     clearInterval(freeInterval);
-    state.freeMatches.push({ id:Date.now(), a:freePendingSave.winnerId, b:freePendingSave.loserId, ga:10, gb:freePendingSave.loserGoals });
+    state.freeMatches.push({ id:genId(), a:freePendingSave.winnerId, b:freePendingSave.loserId, ga:10, gb:freePendingSave.loserGoals });
     persist();
     document.querySelector('#freeLoserGoals').value = '';
     msg.textContent = `✅ Uloženo: ${getP(freePendingSave.winnerId).name} 10:${freePendingSave.loserGoals} ${getP(freePendingSave.loserId).name}`;
@@ -911,19 +923,16 @@ window.openProfile = function(id) {
 
   // Vyhodnocení Levelovacích Odznaků
   let bHTML = '';
-  // Kanonýr
   if(stats.goals >= 300) bHTML += `<div class="badge-prog">⚽ <div><b>Kanonýr III</b><br><small>300+ gólů</small></div></div>`;
   else if(stats.goals >= 150) bHTML += `<div class="badge-prog">⚽ <div><b>Kanonýr II</b><br><small>150+ gólů</small></div></div>`;
   else if(stats.goals >= 50) bHTML += `<div class="badge-prog">⚽ <div><b>Kanonýr I</b><br><small>50+ gólů</small></div></div>`;
   else bHTML += `<div class="badge-prog locked">⚽ <div><b>Kanonýr I</b><br><small>Chybí ${50 - stats.goals} gólů</small></div></div>`;
   
-  // Veterán
   if(stats.played >= 250) bHTML += `<div class="badge-prog">🏅 <div><b>Veterán III</b><br><small>250+ zápasů</small></div></div>`;
   else if(stats.played >= 100) bHTML += `<div class="badge-prog">🏅 <div><b>Veterán II</b><br><small>100+ zápasů</small></div></div>`;
   else if(stats.played >= 25) bHTML += `<div class="badge-prog">🏅 <div><b>Veterán I</b><br><small>25+ zápasů</small></div></div>`;
   else bHTML += `<div class="badge-prog locked">🏅 <div><b>Veterán I</b><br><small>Chybí ${25 - stats.played} zápasů</small></div></div>`;
   
-  // Pekař (Kanáři)
   if(stats.kanars >= 15) bHTML += `<div class="badge-prog">🥯 <div><b>Pekař III</b><br><small>15x Kanár 10:0</small></div></div>`;
   else if(stats.kanars >= 5) bHTML += `<div class="badge-prog">🥯 <div><b>Pekař II</b><br><small>5x Kanár 10:0</small></div></div>`;
   else if(stats.kanars >= 1) bHTML += `<div class="badge-prog">🥯 <div><b>Pekař I</b><br><small>1x Kanár 10:0</small></div></div>`;
@@ -967,7 +976,7 @@ window.removePlayer=function(id){
 };
 
 document.querySelector('#addPlayer').addEventListener('click',()=>{
-  state.players.push({id:Date.now(),name:`Hráč ${state.players.length+1}`});
+  state.players.push({id:genId(),name:`Hráč ${state.players.length+1}`});
   updateFixtures();
   persist();
 });
