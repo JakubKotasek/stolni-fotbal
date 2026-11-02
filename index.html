@@ -196,14 +196,17 @@ ul.rules-list{padding-left:20px;line-height:1.8;margin-top:0}ul.rules-list li{ma
 
   <section id="shared-help" class="hidden">
     <div class="panel"><h2>💡 Encyklopedie a Pravidla</h2><div class="content encyclopedia">
-      <h3>📈 Co je to ELO Rating (Žebříček síly)?</h3>
-      <p>Ve Volné hře používáme profesionální šachový systém ELO. Každý hráč začíná na hodnotě 1000 bodů. Zde nezáleží jen na tom, jestli vyhraješ, ale <b>KOHO</b> porazíš. Pokud porazíš lídra tabulky, získáš obrovskou porci bodů. Pokud naopak prohraješ se slabým outsiderem, hodně bodů ztratíš. Tento žebříček nejdokonaleji odráží aktuální formu hráče bez ohledu na to, kolik zápasů stihl odehrát.</p>
+      <h3 style="margin-top:0">✍️ Jak funguje zápis výsledku?</h3>
+      <p>Zápis je maximálně zjednodušený: nahoře vždy vybereš <b>Vítěze</b>, kterému systém automaticky zapíše 10 gólů a přidělí 3 body do ligy. Následně vybereš poraženého a zadáš <b>pouze počet gólů, které dal poražený</b>. Podle počtu těchto gólů pak poražený získá příslušný počet bodů (např. 2 body za prohru 8:10).</p>
 
       <h3>⏱️ Časomíra zápisu (30 s)</h3>
-      <p>Zapsat překlep zamrzí. Proto při ukládání výsledku (jak v lize, tak ve volné hře) neodesíláme data na server okamžitě. Spustí se <b>30vteřinový odpočet</b>. Pokud si uvědomíš chybu, stačí během této doby kliknout na červené tlačítko <b>Zastavit odpočet</b> a zápis se stornuje. Pokud nic neuděláš, po 30 vteřinách se výsledek bezpečně uloží.</p>
+      <p>Zapsat překlep zamrzí. Proto při ukládání výsledku neodesíláme data na server okamžitě. Spustí se <b>30vteřinový odpočet</b>. Pokud si uvědomíš chybu, stačí během této doby kliknout na červené tlačítko <b>Zastavit odpočet</b> a zápis se stornuje. Pokud nic neuděláš, po 30 vteřinách se výsledek bezpečně uloží.</p>
+
+      <h3>📈 Co je to ELO Rating (Žebříček síly)?</h3>
+      <p>Ve Volné hře používáme profesionální systém ELO. Každý hráč začíná na hodnotě 1000 bodů. Zde nezáleží jen na tom, jestli vyhraješ, ale <b>KOHO</b> porazíš. Pokud porazíš lídra tabulky, získáš obrovskou porci bodů. Pokud naopak prohraješ se slabým outsiderem, hodně bodů ztratíš. Tento žebříček nejdokonaleji odráží aktuální formu bez ohledu na to, kolik zápasů jsi stihl odehrát.</p>
 
       <h3>🔒 Ochrana PINem</h3>
-      <p>Aby nikdo v hospodě s půjčeným telefonem omylem nesmazal celou ligu, jsou nebezpečné akce (smazání odehraného zápasu, vymazání hráče, uzavření sezóny a reset databáze) zabezpečeny PIN kódem. <b>Váš PIN je: 1548</b>.</p>
+      <p>Aby nikdo s půjčeným telefonem omylem nesmazal celou ligu, jsou nebezpečné akce (smazání zápasu, vymazání hráče, uzavření sezóny a reset databáze) zabezpečeny tajným PIN kódem, který zná jen správce ligy.</p>
 
       <h3>🏅 Virtuální odznaky (Liga)</h3>
       <ul>
@@ -280,9 +283,10 @@ function persist(){
   });
 }
 
+// Skryté ověření pinu pomocí Base64 ("MTU0OA==" odpovídá číslu 1548)
 function checkPin() {
   let pin = prompt("Zadej bezpečnostní PIN pro tuto akci:");
-  if (pin === "1548") return true;
+  if (pin && btoa(pin) === "MTU0OA==") return true;
   if (pin !== null) alert("Nesprávný PIN! Akce zrušena.");
   return false;
 }
