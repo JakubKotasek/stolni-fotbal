@@ -35,6 +35,7 @@ nav button,.btn{border:1px solid #31516f;background:#122941;color:var(--text);pa
 nav button.active,.btn.primary{background:var(--blue);border-color:var(--blue);color:white}button:hover{filter:brightness(1.12)}
 .btn.danger{background:var(--red);border-color:var(--red);color:white}
 .btn.danger-outline{background:transparent;border-color:var(--red);color:var(--red)}
+.btn.success{background:var(--green);border-color:var(--green);color:white}
 
 main{padding:20px;max-width:1500px;margin:auto}.grid{display:grid;gap:18px}.panel{background:linear-gradient(160deg,#0e2237,#0a1a2b);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px;transition:background 0.3s}
 .panel h2{font-size:18px;margin:0;padding:15px 18px;border-bottom:1px solid var(--line)}.content{padding:16px}.scroll{overflow:auto}
@@ -133,6 +134,7 @@ body.theme-free .modal-content {background:#1a0a00; border-color:var(--red);}
         <div class="wide"><label>Góly poraženého</label><input id="ligaLoserGoals" type="number" min="0" max="9" value=""></div>
         <div class="wide actions">
           <button class="btn primary" id="saveLigaResult">Uložit výsledek do ligy</button>
+          <button class="btn primary hidden" id="confirmLigaSaveFast">⚡ Uložit ihned</button>
           <button class="btn danger hidden" id="cancelLigaSave">Zastavit odpočet (Zrušit)</button>
           <button class="btn danger-outline hidden" id="cancelLigaEdit">Zrušit úpravy</button>
         </div>
@@ -161,6 +163,7 @@ body.theme-free .modal-content {background:#1a0a00; border-color:var(--red);}
         <div class="wide"><div id="freePrediction" class="small muted text-center" style="margin-top:-5px;margin-bottom:10px"></div></div>
         <div class="wide actions">
           <button class="btn primary" id="saveFreeResult">Uložit volný zápas</button>
+          <button class="btn primary hidden" id="confirmFreeSaveFast">⚡ Uložit ihned</button>
           <button class="btn danger hidden" id="cancelFreeSave">Zastavit odpočet (Zrušit)</button>
         </div>
       </div>
@@ -215,7 +218,7 @@ body.theme-free .modal-content {background:#1a0a00; border-color:var(--red);}
       <p>Ve Volné hře používáme ELO. Každý začíná na 1000 bodech. Zde nezáleží jen na tom, jestli vyhraješ, ale <b>KOHO</b> porazíš. Pokud porazíš lídra tabulky, získáš obrovskou porci bodů. Pokud prohraješ s outsiderem, hodně bodů ztratíš. Před každým zápasem ti apka ukáže predikci v %.</p>
 
       <h3>⏱️ Časomíra zápisu (30 s)</h3>
-      <p>Při ukládání výsledku neodesíláme data hned. Spustí se <b>30vteřinový odpočet</b>. Pokud si uvědomíš chybu, stačí kliknout na červené tlačítko <b>Zrušit</b>. Jinak se výsledek bezpečně uloží.</p>
+      <p>Při ukládání výsledku neodesíláme data hned. Spustí se <b>30vteřinový odpočet</b>. Pokud si uvědomíš chybu, stačí kliknout na červené tlačítko <b>Zrušit</b>. Pokud jsi si jistý, můžeš využít modré tlačítko <b>Uložit ihned</b> a odpočet přeskočit.</p>
 
       <h3>🏅 Aktuální Forma (Liga)</h3>
       <p>V ligové tabulce se vedle skóre objevují dočasné odznaky: 🔥 <b>V laufu</b> (3+ výhry v řadě), 🥶 <b>Krize</b> (3+ prohry v řadě), 🛡️ <b>Železná zeď</b> (aktuálně nejlepší obrana) a 🥯 <b>Kanár</b> (výhra 10:0).</p>
@@ -502,6 +505,7 @@ function renderLiga(){
 // ČASOMÍRA PRO LIGU
 function resetLigaSaveUI() {
   document.querySelector('#saveLigaResult').classList.remove('hidden');
+  document.querySelector('#confirmLigaSaveFast').classList.add('hidden');
   document.querySelector('#cancelLigaSave').classList.add('hidden');
 }
 
@@ -511,6 +515,24 @@ document.querySelector('#cancelLigaSave').addEventListener('click', () => {
   ligaPendingSave = null;
   document.querySelector('#ligaResultMsg').textContent = 'Zápis zrušen.';
   resetLigaSaveUI();
+});
+
+document.querySelector('#confirmLigaSaveFast').addEventListener('click', () => {
+  if(!ligaPendingSave) return;
+  clearTimeout(ligaTimer);
+  clearInterval(ligaInterval);
+  
+  if(ligaPendingSave.match.a === ligaPendingSave.winnerId) { 
+    ligaPendingSave.match.ga = 10; ligaPendingSave.match.gb = ligaPendingSave.loserGoals; 
+  } else { 
+    ligaPendingSave.match.gb = 10; ligaPendingSave.match.ga = ligaPendingSave.loserGoals; 
+  }
+  persist();
+  let msg = document.querySelector('#ligaResultMsg');
+  msg.textContent = `✅ Uloženo ihned: ${getP(ligaPendingSave.winnerId).name} 10:${ligaPendingSave.loserGoals} ${getP(ligaPendingSave.loserId).name}`;
+  resetLigaSaveUI();
+  cancelLigaEditState();
+  setTimeout(()=>msg.textContent='', 4000);
 });
 
 document.querySelector('#saveLigaResult').addEventListener('click', () => {
@@ -537,6 +559,7 @@ document.querySelector('#saveLigaResult').addEventListener('click', () => {
   ligaPendingSave = { match: m, winnerId: winnerId, loserId: loserId, loserGoals: loserGoals };
   
   document.querySelector('#saveLigaResult').classList.add('hidden');
+  document.querySelector('#confirmLigaSaveFast').classList.remove('hidden');
   document.querySelector('#cancelLigaSave').classList.remove('hidden');
   
   let timeLeft = 30;
@@ -566,11 +589,12 @@ document.querySelector('#saveLigaResult').addEventListener('click', () => {
 });
 
 window.editLigaMatch = function(id) {
-  if(!checkPin()) return;
+  if(!checkPin()) return; // Zabezpečení proti neoprávněné úpravě
   let m = state.matches.find(x => x.id === id);
   if(!m) return;
   document.querySelector('#navLiga button[data-target="liga-enter"]').click();
   
+  // Zrušíme případnou běžící časomíru
   clearTimeout(ligaTimer); clearInterval(ligaInterval); resetLigaSaveUI(); document.querySelector('#ligaResultMsg').textContent = '';
   
   editingLigaMatchId = id;
@@ -709,6 +733,7 @@ window.removeFreeMatch = function(id){
 // ČASOMÍRA PRO VOLNOU HRU
 function resetFreeSaveUI() {
   document.querySelector('#saveFreeResult').classList.remove('hidden');
+  document.querySelector('#confirmFreeSaveFast').classList.add('hidden');
   document.querySelector('#cancelFreeSave').classList.add('hidden');
 }
 
@@ -718,6 +743,20 @@ document.querySelector('#cancelFreeSave').addEventListener('click', () => {
   freePendingSave = null;
   document.querySelector('#freeResultMsg').textContent = 'Zápis zrušen.';
   resetFreeSaveUI();
+});
+
+document.querySelector('#confirmFreeSaveFast').addEventListener('click', () => {
+  if(!freePendingSave) return;
+  clearTimeout(freeTimer);
+  clearInterval(freeInterval);
+  
+  state.freeMatches.push({ id:Date.now(), a:freePendingSave.winnerId, b:freePendingSave.loserId, ga:10, gb:freePendingSave.loserGoals });
+  persist();
+  document.querySelector('#freeLoserGoals').value = '';
+  let msg = document.querySelector('#freeResultMsg');
+  msg.textContent = `✅ Uloženo ihned: ${getP(freePendingSave.winnerId).name} 10:${freePendingSave.loserGoals} ${getP(freePendingSave.loserId).name}`;
+  resetFreeSaveUI();
+  setTimeout(()=>msg.textContent='', 3000);
 });
 
 document.querySelector('#saveFreeResult').addEventListener('click', ()=>{
@@ -735,6 +774,7 @@ document.querySelector('#saveFreeResult').addEventListener('click', ()=>{
   freePendingSave = { winnerId: winnerId, loserId: loserId, loserGoals: loserGoals };
   
   document.querySelector('#saveFreeResult').classList.add('hidden');
+  document.querySelector('#confirmFreeSaveFast').classList.remove('hidden');
   document.querySelector('#cancelFreeSave').classList.remove('hidden');
   
   let timeLeft = 30;
