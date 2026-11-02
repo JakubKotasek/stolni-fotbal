@@ -53,7 +53,7 @@ ul.rules-list{padding-left:20px;line-height:1.8;margin-top:0}ul.rules-list li{ma
 .warning-box{background:rgba(224, 70, 94, 0.1);border:1px solid var(--red);padding:10px;border-radius:8px;color:#ffb7bd;font-weight:bold;text-align:center}
 
 @media(max-width:900px){.statcards{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:520px){main{padding:10px}header{padding:12px 15px}.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}.statcards{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){main{padding:10px}header{padding:12px 15px}.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}.statcards{grid-template-columns:1fr 1fr}.action-group{display:flex;gap:5px;justify-content:center}}
 </style>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -273,7 +273,6 @@ function setMode(mode) {
     document.getElementById('navFree').classList.remove('hidden');
     document.getElementById('wrapperFree').classList.remove('hidden');
     
-    // Auto-click first tab
     document.querySelector('#navFree button[data-target="free-enter"]').click();
   } else {
     document.body.classList.remove('theme-free');
@@ -284,23 +283,18 @@ function setMode(mode) {
     document.getElementById('navLiga').classList.remove('hidden');
     document.getElementById('wrapperLiga').classList.remove('hidden');
     
-    // Auto-click first tab
     document.querySelector('#navLiga button[data-target="liga-overview"]').click();
   }
 }
 
 document.querySelectorAll('.subnav button').forEach(b => {
   b.addEventListener('click', () => {
-    // Reset active states in current subnav
     b.parentElement.querySelectorAll('button').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
     
     let targetId = b.dataset.target;
-    
-    // Hide all sections inside current wrapper and shared wrapper
     document.querySelectorAll('#wrapperLiga > section, #wrapperFree > section, #wrapperShared > section').forEach(sec => sec.classList.add('hidden'));
     
-    // Show shared wrapper if needed
     if(targetId === 'shared-players') {
       document.getElementById('wrapperShared').classList.remove('hidden');
       document.getElementById('shared-players').classList.remove('hidden');
@@ -314,7 +308,7 @@ document.querySelectorAll('.subnav button').forEach(b => {
 /* ==================== VYKRESLOVÁNÍ DAT ==================== */
 function renderAll(){
   if(!dataLoaded) return;
-  renderSelects(); // Obnoví jména ve všech roletkách
+  renderSelects();
   renderLiga();
   renderFree();
   renderPlayers();
@@ -322,8 +316,6 @@ function renderAll(){
 
 function renderSelects() {
   let opts = state.players.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
-  
-  // Bezpečný update roletek bez smazání vybrané hodnoty
   let selects = ['#ligaPlayerA', '#ligaPlayerB', '#freePlayerA', '#freePlayerB', '#h2hA', '#h2hB'];
   selects.forEach(id => {
     let el = document.querySelector(id);
@@ -388,10 +380,10 @@ function renderLiga(){
   
   document.querySelector('#statsTable').innerHTML=`<thead><tr><th>#</th><th>Hráč</th><th>Odznaky</th><th>Série</th><th>Výhry</th><th>Prohry</th><th>Skóre</th><th>Body</th></tr></thead><tbody>${stats.map((p,i)=>`<tr><td>${rankHtml(i)}</td><td>${esc(p.name)}</td><td>${p.badges}</td><td>${p.winStreak > 0 ? `<span style="color:var(--green)">+${p.winStreak}</span>` : p.loseStreak > 0 ? `<span style="color:var(--red)">-${p.loseStreak}</span>` : '0'}</td><td>${p.w}</td><td>${p.l}</td><td>${p.for}:${p.against}</td><td><b>${p.points}</b></td></tr>`).join('')}</tbody>`;
 
-  // Matches table
   let f = document.querySelector('#matchFilter').value, q = document.querySelector('#searchMatch').value.toLocaleLowerCase('cs');
   let filteredMatches = state.matches.filter(m => (f==='all' || (f==='played'?played(m):!played(m))) && `${getP(m.a).name} ${getP(m.b).name}`.toLocaleLowerCase('cs').includes(q));
-  document.querySelector('#matchesTable').innerHTML=`<thead><tr><th>Hráč 1</th><th>Skóre</th><th>Hráč 2</th><th>Stav</th><th>Akce</th></tr></thead><tbody>${filteredMatches.map(m=>`<tr><td>${esc(getP(m.a).name)}</td><td>${played(m)?`<b>${m.ga} : ${m.gb}</b>`:'— : —'}</td><td>${esc(getP(m.b).name)}</td><td>${played(m)?'Odehráno':'Čeká'}</td><td><button class="btn" onclick="editLigaMatch(${m.id})">${played(m)?'Upravit':'Zadat'}</button></td></tr>`).join('')}</tbody>`;
+  
+  document.querySelector('#matchesTable').innerHTML=`<thead><tr><th>Hráč 1</th><th>Skóre</th><th>Hráč 2</th><th>Akce</th></tr></thead><tbody>${filteredMatches.map(m=>`<tr><td>${esc(getP(m.a).name)}</td><td>${played(m)?`<b>${m.ga} : ${m.gb}</b>`:'— : —'}</td><td>${esc(getP(m.b).name)}</td><td><div class="action-group">${played(m)?`<button class="btn" onclick="editLigaMatch(${m.id})">Upravit</button><button class="btn danger" onclick="clearLigaMatch(${m.id})" title="Vymazat výsledek">✖</button>`:`<button class="btn primary" onclick="editLigaMatch(${m.id})">Zadat</button>`}</div></td></tr>`).join('')}</tbody>`;
 }
 
 // ------ LIGA ZÁPIS ------
@@ -416,7 +408,6 @@ document.querySelector('#saveLigaResult').addEventListener('click', () => {
     m = pending[0];
   }
 
-  // Přiřadíme góly správnému hráči
   if(m.a === a && m.b === b) { m.ga = ga; m.gb = gb; }
   else { m.ga = gb; m.gb = ga; }
 
@@ -429,9 +420,7 @@ document.querySelector('#saveLigaResult').addEventListener('click', () => {
 window.editLigaMatch = function(id) {
   let m = state.matches.find(x => x.id === id);
   if(!m) return;
-  
   document.querySelector('#navLiga button[data-target="liga-enter"]').click();
-  
   editingLigaMatchId = id;
   document.querySelector('#ligaPlayerA').value = m.a;
   document.querySelector('#ligaPlayerB').value = m.b;
@@ -439,14 +428,22 @@ window.editLigaMatch = function(id) {
   document.querySelector('#ligaPlayerB').disabled = true;
   document.querySelector('#ligaGoalsA').value = played(m) ? m.ga : 10;
   document.querySelector('#ligaGoalsB').value = played(m) ? m.gb : 0;
-  
   document.querySelector('#ligaEditWarning').classList.remove('hidden');
   document.querySelector('#cancelLigaEdit').classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
 };
 
-document.querySelector('#cancelLigaEdit').addEventListener('click', cancelLigaEditState);
+window.clearLigaMatch = function(id) {
+  if(confirm('Opravdu chceš smazat výsledek tohoto zápasu? Bude se znovu tvářit jako neodehraný.')){
+    let m = state.matches.find(x => x.id === id);
+    if(m) {
+      m.ga = ''; m.gb = '';
+      persist();
+    }
+  }
+};
 
+document.querySelector('#cancelLigaEdit').addEventListener('click', cancelLigaEditState);
 function cancelLigaEditState() {
   editingLigaMatchId = null;
   document.querySelector('#ligaPlayerA').disabled = false;
@@ -571,6 +568,5 @@ document.querySelector('#resetAll').addEventListener('click',()=>{
     persist();
   }
 });
-
 </script>
 </body></html>
