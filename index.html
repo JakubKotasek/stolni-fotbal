@@ -102,7 +102,7 @@ body.theme-free .modal-content {background:#1a0a00; border-color:var(--red);}
   <button class="active" data-target="liga-overview">🏆 Tabulka ligy</button>
   <button data-target="liga-enter">✍️ Zapsat do ligy</button>
   <button data-target="liga-matches">📅 Rozpis a Historie</button>
-  <button data-target="shared-players">⚙️ Hráči a Nastavení</button>
+  <button data-target="shared-players">⚙️ Nastavení hráčů</button>
   <button data-target="shared-help">💡 Nápověda</button>
 </nav>
 
@@ -111,7 +111,7 @@ body.theme-free .modal-content {background:#1a0a00; border-color:var(--red);}
   <button class="active" data-target="free-enter">⚔️ Zapsat volný zápas</button>
   <button data-target="free-h2h">👀 Vzájemná bilance</button>
   <button data-target="free-standings">📈 ELO Žebříček</button>
-  <button data-target="shared-players">⚙️ Hráči a Nastavení</button>
+  <button data-target="shared-players">⚙️ Nastavení hráčů</button>
   <button data-target="shared-help">💡 Nápověda</button>
 </nav>
 
@@ -191,9 +191,11 @@ body.theme-free .modal-content {background:#1a0a00; border-color:var(--red);}
 <div id="wrapperShared" class="hidden">
   <section id="shared-players" class="hidden">
     <div class="panel"><h2>⚙️ Správa hráčů a Nastavení</h2><div class="content">
-      <p class="muted">Jména a zobrazené tituly se ihned projeví všude.</p>
+      <p class="muted">Úpravy jmen a titulů se <b>ukládají automaticky</b> při psaní nebo opuštění políčka.</p>
       <div id="playerInputs"></div>
-      <div class="actions" style="margin-top:15px;"><button class="btn" id="addPlayer">➕ Přidat dalšího hráče</button><button class="btn primary" id="saveNames">💾 Uložit úpravy</button></div>
+      <div class="actions" style="margin-top:15px;">
+        <button class="btn primary" id="addPlayer">➕ Přidat dalšího hráče</button>
+      </div>
       <div id="playersMsg" class="status" style="margin-top:10px;"></div>
       
       <hr style="border:0;border-top:1px solid var(--line);margin:30px 0 20px">
@@ -211,19 +213,19 @@ body.theme-free .modal-content {background:#1a0a00; border-color:var(--red);}
   <section id="shared-help" class="hidden">
     <div class="panel"><h2>💡 Encyklopedie a Pravidla</h2><div class="content encyclopedia">
       <h3 style="margin-top:0">🪪 Osobní profily a Tituly</h3>
-      <p>Kliknutím na jakékoliv jméno v tabulce otevřeš osobní kartu hráče. Tam najdeš jeho celoživotní statistiky a odemčené odznaky (levely). Pokud hráč vyhraje medaili po ukončení ligové sezóny, získá trvalý <b>Titul</b>. Ten si může nastavit v sekci Nastavení a bude mu svítit u jména, aby ukázal svou dominanci.</p>
+      <p>Kliknutím na jakékoliv jméno v tabulce otevřeš osobní kartu hráče. Tam najdeš jeho celoživotní statistiky a odemčené odznaky (levely). Pokud hráč vyhraje medaili po ukončení ligové sezóny, získá trvalý <b>Titul</b>. Ten si může nastavit v sekci Nastavení a bude mu svítit u jména.</p>
 
       <h3>📈 Co je to ELO Rating (Žebříček síly)?</h3>
-      <p>Ve Volné hře používáme ELO. Každý začíná na 1000 bodech. Zde nezáleží jen na tom, jestli vyhraješ, ale <b>KOHO</b> porazíš. Pokud porazíš lídra tabulky, získáš obrovskou porci bodů. Pokud prohraješ s outsiderem, hodně bodů ztratíš. Před každým zápasem ti apka ukáže predikci v %.</p>
+      <p>Ve Volné hře používáme ELO. Každý začíná na 1000 bodech. Zde nezáleží jen na tom, jestli vyhraješ, ale <b>KOHO</b> porazíš. Pokud porazíš lídra, získáš víc bodů než za outsidera. Před každým zápasem ti apka ukáže predikci v %.</p>
 
-      <h3>⏱️ Časomíra zápisu (30 s)</h3>
-      <p>Při ukládání výsledku neodesíláme data hned. Spustí se <b>30vteřinový odpočet</b>. Pokud si uvědomíš chybu, stačí kliknout na červené tlačítko <b>Zrušit</b>. Pokud jsi si jistý, můžeš využít modré tlačítko <b>Uložit ihned</b> a odpočet přeskočit.</p>
+      <h3>⏱️ Zrychlený zápis a Časomíra</h3>
+      <p>Při ukládání výsledku se spustí <b>30vteřinový odpočet</b> (proti překlepům). Lze ho zrušit tlačítkem <b>Zrušit</b>. Pokud jsi si jistý, můžeš využít modré tlačítko <b>Uložit ihned</b> a odpočet přeskočit.</p>
 
       <h3>🏅 Aktuální Forma (Liga)</h3>
       <p>V ligové tabulce se vedle skóre objevují dočasné odznaky: 🔥 <b>V laufu</b> (3+ výhry v řadě), 🥶 <b>Krize</b> (3+ prohry v řadě), 🛡️ <b>Železná zeď</b> (aktuálně nejlepší obrana) a 🥯 <b>Kanár</b> (výhra 10:0).</p>
 
       <h3>🔒 Ochrana PINem</h3>
-      <p>Aby nikdo omylem nesmazal data, jsou nebezpečné akce (smazání zápasu, přepsání zápasu, smazání hráče, ukončení sezóny) zabezpečeny tajným PIN kódem pro správce.</p>
+      <p>Aby nikdo omylem nesmazal data, jsou nebezpečné akce zabezpečeny tajným PIN kódem pro správce (smazání/úprava zápasu, mazání hráče, konec sezóny).</p>
 
       <h3>📖 Oficiální pravidla fotbálku</h3>
       <ul class="rules-list">
@@ -292,14 +294,14 @@ let freePendingSave = null, freeTimer = null, freeInterval = null;
 
 function fresh(){ return {players:[],matches:[],freeMatches:[],archive:[],archivedMatches:[],currentSeason:1} }
 
-// Zásadní ochrana: Brání Firebase předělat indexy na objekty
+// KLÍČOVÁ OCHRANA: Převede cokoliv na čisté pole a vymaže případné chyby (null) z Firebase
 function toArray(obj) {
   if (!obj) return [];
-  if (Array.isArray(obj)) return obj;
-  return Object.values(obj);
+  let arr = Array.isArray(obj) ? obj : Object.values(obj);
+  return arr.filter(item => item !== null && item !== undefined);
 }
 
-// Zásadní ochrana 2: Čistá generace ID
+// KLÍČOVÁ OCHRANA 2: Robustní unikátní ID pro hráče a zápasy
 function genId() {
   return Date.now() + Math.floor(Math.random() * 100000);
 }
@@ -438,15 +440,14 @@ function renderSelects() {
 
   if(state.players.length >= 2) {
     let lw = document.querySelector('#ligaWinner'); let ll = document.querySelector('#ligaLoser');
-    if(lw.value === ll.value) ll.value = state.players[1].id;
+    if(lw.value === ll.value) ll.value = (String(lw.value)===String(state.players[0].id)) ? state.players[1].id : state.players[0].id;
     
     let fw = document.querySelector('#freeWinner'); let fl = document.querySelector('#freeLoser');
-    if(fw.value === fl.value) fl.value = state.players[1].id;
+    if(fw.value === fl.value) fl.value = (String(fw.value)===String(state.players[0].id)) ? state.players[1].id : state.players[0].id;
   }
   updateFreePrediction();
 }
 
-// FORMATOVANI JMÉNA S TITULEM
 function formatName(p) {
   let titleHtml = p.activeTitle ? `<span class="title-text">${esc(p.activeTitle)}</span>` : '';
   return `<div class="clickable-name" onclick="openProfile('${p.id}')">${titleHtml}${esc(p.name)}</div>`;
@@ -505,8 +506,6 @@ function renderLiga(){
 
   document.querySelector('#standings').innerHTML=`<thead><tr><th>#</th><th>Hráč</th><th>Záp.</th><th>Výhry</th><th>Prohry</th><th>Skóre</th><th>Forma</th><th>Body</th></tr></thead><tbody>${stats.map((p,i)=>`<tr><td>${rankHtml(i)}</td><td>${formatName(p)}</td><td>${p.played}</td><td>${p.w}</td><td>${p.l}</td><td>${p.for}:${p.against}</td><td>${renderFormHtml(p.form)}</td><td><b>${p.points}</b></td></tr>`).join('')}</tbody>`;
   
-  document.querySelector('#statsTable').innerHTML=`<thead><tr><th>#</th><th>Hráč</th><th>Odznaky</th><th>Série</th><th>Výhry</th><th>Prohry</th><th>Skóre</th><th>Body</th></tr></thead><tbody>${stats.map((p,i)=>`<tr><td>${rankHtml(i)}</td><td>${formatName(p)}</td><td>${p.badges}</td><td>${p.winStreak > 0 ? `<span style="color:var(--green)">+${p.winStreak}</span>` : p.loseStreak > 0 ? `<span style="color:var(--red)">-${p.loseStreak}</span>` : '0'}</td><td>${p.w}</td><td>${p.l}</td><td>${p.for}:${p.against}</td><td><b>${p.points}</b></td></tr>`).join('')}</tbody>`;
-
   let f = document.querySelector('#matchFilter').value, q = document.querySelector('#searchMatch').value.toLocaleLowerCase('cs');
   let filteredMatches = state.matches.filter(m => (f==='all' || (f==='played'?played(m):!played(m))) && `${getP(m.a).name} ${getP(m.b).name}`.toLocaleLowerCase('cs').includes(q));
   
@@ -605,6 +604,8 @@ window.editLigaMatch = function(id) {
   if(!checkPin()) return;
   let m = state.matches.find(x => String(x.id) === String(id));
   if(!m) return;
+  if(document.activeElement) document.activeElement.blur(); // focus protection
+
   document.querySelector('#navLiga button[data-target="liga-enter"]').click();
   
   clearTimeout(ligaTimer); clearInterval(ligaInterval); resetLigaSaveUI(); document.querySelector('#ligaResultMsg').textContent = '';
@@ -629,6 +630,7 @@ window.editLigaMatch = function(id) {
 window.clearLigaMatch = function(id) {
   if(!checkPin()) return;
   if(confirm('Opravdu chceš smazat výsledek tohoto zápasu? Bude se znovu tvářit jako neodehraný.')){
+    if(document.activeElement) document.activeElement.blur();
     let m = state.matches.find(x => String(x.id) === String(id));
     if(m) { m.ga = ''; m.gb = ''; persist(); }
   }
@@ -737,6 +739,7 @@ document.querySelector('#h2hB').addEventListener('change', calcH2H);
 window.removeFreeMatch = function(id){
   if(!checkPin()) return;
   if(confirm("Opravdu smazat tento volný zápas? Zpětně to přepočítá aktuální ELO všech hráčů.")){ 
+    if(document.activeElement) document.activeElement.blur();
     state.freeMatches = state.freeMatches.filter(m=>String(m.id)!==String(id)); 
     persist(); 
   }
@@ -945,9 +948,9 @@ window.closeProfile = function() {
 };
 
 
-// ------ SPRÁVA HRÁČŮ ------
+// ------ SPRÁVA HRÁČŮ (AUTOMATICKÉ UKLÁDÁNÍ) ------
 function renderPlayers(){
-  // Ochrana: Nepřekresluj, pokud zrovna uživatel píše, aby neztratil kurzor
+  // Ochrana kurzoru při psaní: Pokud uživatel zrovna píše do konkrétního pole, nepřekreslujeme celou sekci.
   if (document.activeElement && (document.activeElement.classList.contains('p-name') || document.activeElement.classList.contains('p-title'))) {
     return;
   }
@@ -965,10 +968,11 @@ function renderPlayers(){
   `).join('');
 }
 
-window.removePlayer=function(id){
+window.removePlayer = function(id){
   if(!checkPin()) return;
   if(confirm('Opravdu chceš tohoto hráče smazat? Zmizí i všechny jeho zápasy.')){
     if(confirm('Jsi si NAPROSTO JISTÝ? Smazání se provede online a nenávratně odstraní výsledky!')){
+      if (document.activeElement) document.activeElement.blur(); // Nutné pro vynucení překreslení UI
       state.players=state.players.filter(p=>String(p.id)!==String(id));
       state.matches=state.matches.filter(m=>String(m.a)!==String(id)&&String(m.b)!==String(id));
       state.freeMatches=state.freeMatches.filter(m=>String(m.a)!==String(id)&&String(m.b)!==String(id));
@@ -978,27 +982,37 @@ window.removePlayer=function(id){
 };
 
 document.querySelector('#addPlayer').addEventListener('click',()=>{
+  if (document.activeElement) document.activeElement.blur(); // Nutné pro vynucení překreslení UI
   state.players.push({id:genId(),name:`Hráč ${state.players.length+1}`});
   updateFixtures();
   persist();
-  setTimeout(renderPlayers, 100);
 });
 
-document.querySelector('#saveNames').addEventListener('click',()=>{
-  document.querySelectorAll('.p-name').forEach(inp=>{
-    let p=state.players.find(x=>String(x.id)===String(inp.dataset.id));
-    if(p) p.name=inp.value.trim()||p.name;
-  });
-  
-  document.querySelectorAll('.p-title').forEach(sel=>{
-    let p=state.players.find(x=>String(x.id)===String(sel.dataset.id));
-    if(p) p.activeTitle=sel.value;
-  });
+// Plynulé auto-ukládání během psaní a po odkliknutí
+document.querySelector('#playerInputs').addEventListener('input', (e) => {
+  if(e.target.classList.contains('p-name')){
+    let p = state.players.find(x=>String(x.id)===String(e.target.dataset.id));
+    if(p) p.name = e.target.value; 
+  }
+});
 
-  persist();
-  let msg = document.querySelector('#playersMsg');
-  msg.textContent='Úpravy synchronizovány do cloudu.';
-  setTimeout(()=>msg.textContent='',3000);
+document.querySelector('#playerInputs').addEventListener('change', (e) => {
+  if(e.target.classList.contains('p-name') || e.target.classList.contains('p-title')){
+    let p = state.players.find(x=>String(x.id)===String(e.target.dataset.id));
+    if(p) {
+      if(e.target.classList.contains('p-name')) p.name = e.target.value.trim() || p.name;
+      if(e.target.classList.contains('p-title')) p.activeTitle = e.target.value;
+      persist();
+      let msg = document.querySelector('#playersMsg');
+      msg.textContent = '✅ Změna uložena';
+      setTimeout(()=>msg.textContent='', 2500);
+    }
+  }
+});
+
+// Zavření klávesnice po stisknutí Enter
+document.querySelector('#playerInputs').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') e.target.blur();
 });
 
 document.querySelector('#resetAll').addEventListener('click',()=>{
