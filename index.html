@@ -448,6 +448,7 @@ function renderSelects() {
   updateFreePrediction();
 }
 
+// FORMATOVANI JMÉNA S TITULEM
 function formatName(p) {
   let titleHtml = p.activeTitle ? `<span class="title-text">${esc(p.activeTitle)}</span>` : '';
   return `<div class="clickable-name" onclick="openProfile('${p.id}')">${titleHtml}${esc(p.name)}</div>`;
@@ -506,6 +507,8 @@ function renderLiga(){
 
   document.querySelector('#standings').innerHTML=`<thead><tr><th>#</th><th>Hráč</th><th>Záp.</th><th>Výhry</th><th>Prohry</th><th>Skóre</th><th>Forma</th><th>Body</th></tr></thead><tbody>${stats.map((p,i)=>`<tr><td>${rankHtml(i)}</td><td>${formatName(p)}</td><td>${p.played}</td><td>${p.w}</td><td>${p.l}</td><td>${p.for}:${p.against}</td><td>${renderFormHtml(p.form)}</td><td><b>${p.points}</b></td></tr>`).join('')}</tbody>`;
   
+  document.querySelector('#statsTable').innerHTML=`<thead><tr><th>#</th><th>Hráč</th><th>Odznaky</th><th>Série</th><th>Výhry</th><th>Prohry</th><th>Skóre</th><th>Body</th></tr></thead><tbody>${stats.map((p,i)=>`<tr><td>${rankHtml(i)}</td><td>${formatName(p)}</td><td>${p.badges}</td><td>${p.winStreak > 0 ? `<span style="color:var(--green)">+${p.winStreak}</span>` : p.loseStreak > 0 ? `<span style="color:var(--red)">-${p.loseStreak}</span>` : '0'}</td><td>${p.w}</td><td>${p.l}</td><td>${p.for}:${p.against}</td><td><b>${p.points}</b></td></tr>`).join('')}</tbody>`;
+
   let f = document.querySelector('#matchFilter').value, q = document.querySelector('#searchMatch').value.toLocaleLowerCase('cs');
   let filteredMatches = state.matches.filter(m => (f==='all' || (f==='played'?played(m):!played(m))) && `${getP(m.a).name} ${getP(m.b).name}`.toLocaleLowerCase('cs').includes(q));
   
@@ -902,9 +905,9 @@ window.openProfile = function(id) {
     if(ownG > oppG) stats.against[oppId].wins++;
   });
 
-  // Určení nejlepšího a nejhoršího soupeře (min 3 zápasy)
+  // Určení nejlepšího a nejhoršího soupeře (min 3 zápasy) - upraveno přesně na hranici 50 %
   let victim = "—", nemesis = "—";
-  let vRate = -1, nRate = 101;
+  let vRate = 50, nRate = 50; 
   Object.keys(stats.against).forEach(oppId => {
     let oppStats = stats.against[oppId];
     if(oppStats.matches >= 3) {
