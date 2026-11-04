@@ -448,7 +448,6 @@ function renderSelects() {
   updateFreePrediction();
 }
 
-// FORMATOVANI JMÉNA S TITULEM
 function formatName(p) {
   let titleHtml = p.activeTitle ? `<span class="title-text">${esc(p.activeTitle)}</span>` : '';
   return `<div class="clickable-name" onclick="openProfile('${p.id}')">${titleHtml}${esc(p.name)}</div>`;
@@ -463,7 +462,7 @@ function getLigaStats() {
     for(const m of pMatches){
       p.played++;
       let isA = (String(m.a) === String(p.id));
-      let own = isA ? m.ga : m.gb, opp = isA ? m.gb : m.ga;
+      let own = Number(isA ? m.ga : m.gb), opp = Number(isA ? m.gb : m.ga);
       p.for+=own; p.against+=opp;
       if(own>opp){
         p.w++; p.points+=3; p.winStreak++; p.loseStreak=0; p.form.push('w');
@@ -507,10 +506,20 @@ function renderLiga(){
 
   document.querySelector('#standings').innerHTML=`<thead><tr><th>#</th><th>Hráč</th><th>Záp.</th><th>Výhry</th><th>Prohry</th><th>Skóre</th><th>Forma</th><th>Body</th></tr></thead><tbody>${stats.map((p,i)=>`<tr><td>${rankHtml(i)}</td><td>${formatName(p)}</td><td>${p.played}</td><td>${p.w}</td><td>${p.l}</td><td>${p.for}:${p.against}</td><td>${renderFormHtml(p.form)}</td><td><b>${p.points}</b></td></tr>`).join('')}</tbody>`;
   
-  document.querySelector('#statsTable').innerHTML=`<thead><tr><th>#</th><th>Hráč</th><th>Odznaky</th><th>Série</th><th>Výhry</th><th>Prohry</th><th>Skóre</th><th>Body</th></tr></thead><tbody>${stats.map((p,i)=>`<tr><td>${rankHtml(i)}</td><td>${formatName(p)}</td><td>${p.badges}</td><td>${p.winStreak > 0 ? `<span style="color:var(--green)">+${p.winStreak}</span>` : p.loseStreak > 0 ? `<span style="color:var(--red)">-${p.loseStreak}</span>` : '0'}</td><td>${p.w}</td><td>${p.l}</td><td>${p.for}:${p.against}</td><td><b>${p.points}</b></td></tr>`).join('')}</tbody>`;
-
-  let f = document.querySelector('#matchFilter').value, q = document.querySelector('#searchMatch').value.toLocaleLowerCase('cs');
-  let filteredMatches = state.matches.filter(m => (f==='all' || (f==='played'?played(m):!played(m))) && `${getP(m.a).name} ${getP(m.b).name}`.toLocaleLowerCase('cs').includes(q));
+  let f = document.querySelector('#matchFilter').value;
+  let q = document.querySelector('#searchMatch').value.toLowerCase();
+  
+  let filteredMatches = state.matches.filter(m => {
+      let isPlayed = played(m);
+      let statusOk = (f === 'all') || (f === 'played' && isPlayed) || (f === 'pending' && !isPlayed);
+      let searchOk = true;
+      if (q) {
+          let nameA = getP(m.a).name.toLowerCase();
+          let nameB = getP(m.b).name.toLowerCase();
+          searchOk = nameA.includes(q) || nameB.includes(q);
+      }
+      return statusOk && searchOk;
+  });
   
   document.querySelector('#matchesTable').innerHTML=`<thead><tr><th>Hráč 1</th><th>Skóre</th><th>Hráč 2</th><th>Akce</th></tr></thead><tbody>${filteredMatches.map(m=>`<tr><td>${esc(getP(m.a).name)}</td><td>${played(m)?`<b>${m.ga} : ${m.gb}</b>`:'— : —'}</td><td>${esc(getP(m.b).name)}</td><td><div class="action-group">${played(m)?`<button class="btn" onclick="editLigaMatch('${m.id}')">Upravit</button><button class="btn danger" onclick="clearLigaMatch('${m.id}')" title="Vymazat výsledek">✖</button>`:`<button class="btn primary" onclick="editLigaMatch('${m.id}')">Zadat</button>`}</div></td></tr>`).join('')}</tbody>`;
 }
@@ -520,6 +529,8 @@ function resetLigaSaveUI() {
   document.querySelector('#saveLigaResult').classList.remove('hidden');
   document.querySelector('#confirmLigaSaveFast').classList.add('hidden');
   document.querySelector('#cancelLigaSave').classList.add('hidden');
+  // Pojistka pro schování tlačítka pro zrušení úpravy, aby se to nebilo
+  if (editingLigaMatchId !== null) document.querySelector('#cancelLigaEdit').classList.remove('hidden');
 }
 
 document.querySelector('#cancelLigaSave').addEventListener('click', () => {
@@ -528,6 +539,7 @@ document.querySelector('#cancelLigaSave').addEventListener('click', () => {
   ligaPendingSave = null;
   document.querySelector('#ligaResultMsg').textContent = 'Zápis zrušen.';
   resetLigaSaveUI();
+  setTimeout(() => { if(!ligaPendingSave) document.querySelector('#ligaResultMsg').textContent = ''; }, 3000);
 });
 
 document.querySelector('#confirmLigaSaveFast').addEventListener('click', () => {
@@ -544,8 +556,8 @@ document.querySelector('#confirmLigaSaveFast').addEventListener('click', () => {
   document.querySelector('#ligaLoserGoals').value = '';
   let msg = document.querySelector('#ligaResultMsg');
   msg.textContent = `✅ Uloženo ihned: ${getP(ligaPendingSave.winnerId).name} 10:${ligaPendingSave.loserGoals} ${getP(ligaPendingSave.loserId).name}`;
+  cancelLigaEditState(); 
   resetLigaSaveUI();
-  cancelLigaEditState();
   setTimeout(()=>msg.textContent='', 4000);
 });
 
@@ -575,6 +587,7 @@ document.querySelector('#saveLigaResult').addEventListener('click', () => {
   document.querySelector('#saveLigaResult').classList.add('hidden');
   document.querySelector('#confirmLigaSaveFast').classList.remove('hidden');
   document.querySelector('#cancelLigaSave').classList.remove('hidden');
+  document.querySelector('#cancelLigaEdit').classList.add('hidden'); // Skryje tlačítko zrušení úpravy během odpočtu
   
   let timeLeft = 30;
   msg.innerHTML = `⏳ Zápis čeká... Odešle se automaticky za <b style="color:var(--yellow)">${timeLeft} s</b>`;
@@ -597,8 +610,8 @@ document.querySelector('#saveLigaResult').addEventListener('click', () => {
     persist();
     document.querySelector('#ligaLoserGoals').value = '';
     msg.textContent = `✅ Uloženo: ${getP(ligaPendingSave.winnerId).name} 10:${ligaPendingSave.loserGoals} ${getP(ligaPendingSave.loserId).name}`;
-    resetLigaSaveUI();
     cancelLigaEditState();
+    resetLigaSaveUI();
     setTimeout(()=>msg.textContent='', 4000);
   }, 30000);
 });
@@ -607,7 +620,7 @@ window.editLigaMatch = function(id) {
   if(!checkPin()) return;
   let m = state.matches.find(x => String(x.id) === String(id));
   if(!m) return;
-  if(document.activeElement) document.activeElement.blur(); // focus protection
+  if(document.activeElement) document.activeElement.blur(); 
 
   document.querySelector('#navLiga button[data-target="liga-enter"]').click();
   
@@ -641,6 +654,9 @@ window.clearLigaMatch = function(id) {
 
 document.querySelector('#cancelLigaEdit').addEventListener('click', cancelLigaEditState);
 function cancelLigaEditState() {
+  // Bezpečnostní vyčištění případných zapomenutých časovačů
+  clearTimeout(ligaTimer); clearInterval(ligaInterval); ligaPendingSave = null; resetLigaSaveUI(); document.querySelector('#ligaResultMsg').textContent = '';
+  
   editingLigaMatchId = null;
   document.querySelector('#ligaWinner').disabled = false;
   document.querySelector('#ligaLoser').disabled = false;
@@ -663,11 +679,12 @@ function getFreeStats() {
     if(!pA || !pB) return;
     
     pA.played++; pB.played++;
-    pA.for += m.ga; pA.against += m.gb;
-    pB.for += m.gb; pB.against += m.ga;
+    let ownG = Number(m.ga), oppG = Number(m.gb);
+    pA.for += ownG; pA.against += oppG;
+    pB.for += oppG; pB.against += ownG;
     
-    let wA = m.ga > m.gb ? 1 : 0;
-    let wB = m.gb > m.ga ? 1 : 0;
+    let wA = ownG > oppG ? 1 : 0;
+    let wB = oppG > ownG ? 1 : 0;
     if(wA) { pA.w++; pB.l++; } else { pB.w++; pA.l++; }
     
     let expectedA = 1 / (1 + Math.pow(10, (pB.elo - pA.elo) / 400));
@@ -720,7 +737,7 @@ function calcH2H(){
   let wA=0, wB=0, gA=0, gB=0;
   mutual.forEach(m => {
     let isA = (String(m.a) === idA);
-    let own = isA ? m.ga : m.gb, opp = isA ? m.gb : m.ga;
+    let own = Number(isA ? m.ga : m.gb), opp = Number(isA ? m.gb : m.ga);
     gA += own; gB += opp;
     if(own>opp) wA++; else if(own<opp) wB++;
   });
@@ -761,6 +778,7 @@ document.querySelector('#cancelFreeSave').addEventListener('click', () => {
   freePendingSave = null;
   document.querySelector('#freeResultMsg').textContent = 'Zápis zrušen.';
   resetFreeSaveUI();
+  setTimeout(() => { if(!freePendingSave) document.querySelector('#freeResultMsg').textContent = ''; }, 3000);
 });
 
 document.querySelector('#confirmFreeSaveFast').addEventListener('click', () => {
@@ -880,7 +898,7 @@ function renderArchive() {
   `).join('');
 }
 
-// ------ PROFIL HRÁČE (CELOŽIVOTNÍ STATY) ------
+// ------ PROFIL HRÁČE (CELOŽIVOTNÍ STATY A OPRAVA KRYPTONITU) ------
 window.openProfile = function(id) {
   let p = state.players.find(x => String(x.id) === String(id));
   if(!p) return;
@@ -894,8 +912,8 @@ window.openProfile = function(id) {
     stats.played++;
     let isA = (String(m.a) === String(id));
     let oppId = isA ? String(m.b) : String(m.a);
-    let ownG = isA ? m.ga : m.gb;
-    let oppG = isA ? m.gb : m.ga;
+    let ownG = Number(isA ? m.ga : m.gb);
+    let oppG = Number(isA ? m.gb : m.ga);
     
     stats.goals += ownG;
     if(ownG > oppG) { stats.wins++; if(ownG === 10 && oppG === 0) stats.kanars++; }
@@ -912,7 +930,11 @@ window.openProfile = function(id) {
     let oppStats = stats.against[oppId];
     if(oppStats.matches >= 3) {
       let wr = (oppStats.wins / oppStats.matches) * 100;
+      
+      // Oběť (WinRate musí být > 50 %)
       if(wr > vRate) { vRate = wr; victim = getP(oppId).name; }
+      
+      // Kryptonit (WinRate musí být < 50 %, poráží on tebe)
       if(wr < nRate) { nRate = wr; nemesis = getP(oppId).name; }
     }
   });
@@ -950,10 +972,8 @@ window.closeProfile = function() {
   document.getElementById('playerModal').classList.remove('active');
 };
 
-
 // ------ SPRÁVA HRÁČŮ (AUTOMATICKÉ UKLÁDÁNÍ) ------
 function renderPlayers(){
-  // Ochrana kurzoru při psaní: Pokud uživatel zrovna píše do konkrétního pole, nepřekreslujeme celou sekci.
   if (document.activeElement && (document.activeElement.classList.contains('p-name') || document.activeElement.classList.contains('p-title'))) {
     return;
   }
@@ -975,7 +995,7 @@ window.removePlayer = function(id){
   if(!checkPin()) return;
   if(confirm('Opravdu chceš tohoto hráče smazat? Zmizí i všechny jeho zápasy.')){
     if(confirm('Jsi si NAPROSTO JISTÝ? Smazání se provede online a nenávratně odstraní výsledky!')){
-      if (document.activeElement) document.activeElement.blur(); // Nutné pro vynucení překreslení UI
+      if (document.activeElement) document.activeElement.blur(); 
       state.players=state.players.filter(p=>String(p.id)!==String(id));
       state.matches=state.matches.filter(m=>String(m.a)!==String(id)&&String(m.b)!==String(id));
       state.freeMatches=state.freeMatches.filter(m=>String(m.a)!==String(id)&&String(m.b)!==String(id));
@@ -985,13 +1005,12 @@ window.removePlayer = function(id){
 };
 
 document.querySelector('#addPlayer').addEventListener('click',()=>{
-  if (document.activeElement) document.activeElement.blur(); // Nutné pro vynucení překreslení UI
+  if (document.activeElement) document.activeElement.blur(); 
   state.players.push({id:genId(),name:`Hráč ${state.players.length+1}`});
   updateFixtures();
   persist();
 });
 
-// Plynulé auto-ukládání během psaní a po odkliknutí
 document.querySelector('#playerInputs').addEventListener('input', (e) => {
   if(e.target.classList.contains('p-name')){
     let p = state.players.find(x=>String(x.id)===String(e.target.dataset.id));
@@ -1013,7 +1032,6 @@ document.querySelector('#playerInputs').addEventListener('change', (e) => {
   }
 });
 
-// Zavření klávesnice po stisknutí Enter
 document.querySelector('#playerInputs').addEventListener('keydown', (e) => {
   if(e.key === 'Enter') e.target.blur();
 });
