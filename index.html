@@ -448,6 +448,7 @@ function renderSelects() {
   updateFreePrediction();
 }
 
+// FORMATOVANI JMÉNA S TITULEM
 function formatName(p) {
   let titleHtml = p.activeTitle ? `<span class="title-text">${esc(p.activeTitle)}</span>` : '';
   return `<div class="clickable-name" onclick="openProfile('${p.id}')">${titleHtml}${esc(p.name)}</div>`;
@@ -529,7 +530,6 @@ function resetLigaSaveUI() {
   document.querySelector('#saveLigaResult').classList.remove('hidden');
   document.querySelector('#confirmLigaSaveFast').classList.add('hidden');
   document.querySelector('#cancelLigaSave').classList.add('hidden');
-  // Pojistka pro schování tlačítka pro zrušení úpravy, aby se to nebilo
   if (editingLigaMatchId !== null) document.querySelector('#cancelLigaEdit').classList.remove('hidden');
 }
 
@@ -556,7 +556,7 @@ document.querySelector('#confirmLigaSaveFast').addEventListener('click', () => {
   document.querySelector('#ligaLoserGoals').value = '';
   let msg = document.querySelector('#ligaResultMsg');
   msg.textContent = `✅ Uloženo ihned: ${getP(ligaPendingSave.winnerId).name} 10:${ligaPendingSave.loserGoals} ${getP(ligaPendingSave.loserId).name}`;
-  cancelLigaEditState(); 
+  cancelLigaEditState();
   resetLigaSaveUI();
   setTimeout(()=>msg.textContent='', 4000);
 });
@@ -577,9 +577,17 @@ document.querySelector('#saveLigaResult').addEventListener('click', () => {
   if(editingLigaMatchId !== null) {
     m = state.matches.find(x => String(x.id) === String(editingLigaMatchId));
   } else {
+    // Opravená logická chyba pro vyhledávání zápasu - povoleno i přímé kliknutí
     let pending = state.matches.filter(x => !played(x) && ((String(x.a)===winnerId && String(x.b)===loserId) || (String(x.a)===loserId && String(x.b)===winnerId)));
-    if(pending.length === 0) { msg.textContent = 'Chyba: Tito dva hráči už spolu oba ligové zápasy odehráli!'; return; }
-    m = pending[0];
+    
+    // Pokud jsme dali Zadat z rozpisu, ale vybrali jsme jiné hráče, musíme najít jejich zápas
+    if (editingLigaMatchId && !pending.includes(m)) {
+       if (pending.length === 0) { msg.textContent = 'Chyba: Tito dva hráči už spolu oba ligové zápasy odehráli!'; return; }
+       m = pending[0];
+    } else if (!editingLigaMatchId) {
+       if (pending.length === 0) { msg.textContent = 'Chyba: Tito dva hráči už spolu oba ligové zápasy odehráli!'; return; }
+       m = pending[0];
+    }
   }
 
   ligaPendingSave = { match: m, winnerId: winnerId, loserId: loserId, loserGoals: loserGoals };
@@ -587,7 +595,7 @@ document.querySelector('#saveLigaResult').addEventListener('click', () => {
   document.querySelector('#saveLigaResult').classList.add('hidden');
   document.querySelector('#confirmLigaSaveFast').classList.remove('hidden');
   document.querySelector('#cancelLigaSave').classList.remove('hidden');
-  document.querySelector('#cancelLigaEdit').classList.add('hidden'); // Skryje tlačítko zrušení úpravy během odpočtu
+  document.querySelector('#cancelLigaEdit').classList.add('hidden');
   
   let timeLeft = 30;
   msg.innerHTML = `⏳ Zápis čeká... Odešle se automaticky za <b style="color:var(--yellow)">${timeLeft} s</b>`;
@@ -617,29 +625,45 @@ document.querySelector('#saveLigaResult').addEventListener('click', () => {
 });
 
 window.editLigaMatch = function(id) {
-  if(!checkPin()) return;
   let m = state.matches.find(x => String(x.id) === String(id));
   if(!m) return;
+  if(played(m)) {
+    if(!checkPin()) return;
+  }
+  
   if(document.activeElement) document.activeElement.blur(); 
 
   document.querySelector('#navLiga button[data-target="liga-enter"]').click();
   
   clearTimeout(ligaTimer); clearInterval(ligaInterval); resetLigaSaveUI(); document.querySelector('#ligaResultMsg').textContent = '';
   
-  editingLigaMatchId = id;
-  
-  let winnerId = m.ga === 10 ? String(m.a) : String(m.b);
-  let loserId = m.ga === 10 ? String(m.b) : String(m.a);
-  let loserGoals = m.ga === 10 ? m.gb : m.ga;
+  if (played(m)) {
+    editingLigaMatchId = id;
+    let winnerId = m.ga === 10 ? String(m.a) : String(m.b);
+    let loserId = m.ga === 10 ? String(m.b) : String(m.a);
+    let loserGoals = m.ga === 10 ? m.gb : m.ga;
 
-  document.querySelector('#ligaWinner').value = winnerId;
-  document.querySelector('#ligaLoser').value = loserId;
-  document.querySelector('#ligaWinner').disabled = true;
-  document.querySelector('#ligaLoser').disabled = true;
-  document.querySelector('#ligaLoserGoals').value = played(m) ? loserGoals : '';
+    document.querySelector('#ligaWinner').value = winnerId;
+    document.querySelector('#ligaLoser').value = loserId;
+    document.querySelector('#ligaWinner').disabled = true;
+    document.querySelector('#ligaLoser').disabled = true;
+    document.querySelector('#ligaLoserGoals').value = loserGoals;
+    
+    document.querySelector('#ligaEditWarning').classList.remove('hidden');
+    document.querySelector('#cancelLigaEdit').classList.remove('hidden');
+  } else {
+    // Je to nový zápas, jen předvyplníme jména, ale zbytek necháme volný
+    editingLigaMatchId = id; // Abychom věděli, do kterého slotu ukládáme
+    document.querySelector('#ligaWinner').value = String(m.a);
+    document.querySelector('#ligaLoser').value = String(m.b);
+    document.querySelector('#ligaWinner').disabled = false;
+    document.querySelector('#ligaLoser').disabled = false;
+    document.querySelector('#ligaLoserGoals').value = '';
+    
+    document.querySelector('#ligaEditWarning').classList.add('hidden');
+    document.querySelector('#cancelLigaEdit').classList.remove('hidden');
+  }
   
-  document.querySelector('#ligaEditWarning').classList.remove('hidden');
-  document.querySelector('#cancelLigaEdit').classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
 };
 
@@ -654,7 +678,6 @@ window.clearLigaMatch = function(id) {
 
 document.querySelector('#cancelLigaEdit').addEventListener('click', cancelLigaEditState);
 function cancelLigaEditState() {
-  // Bezpečnostní vyčištění případných zapomenutých časovačů
   clearTimeout(ligaTimer); clearInterval(ligaInterval); ligaPendingSave = null; resetLigaSaveUI(); document.querySelector('#ligaResultMsg').textContent = '';
   
   editingLigaMatchId = null;
