@@ -214,16 +214,17 @@ body.theme-free .modal-content {background:#1a0a00; border-color:var(--red);}
   <section id="shared-help" class="hidden">
     <div class="panel"><h2>💡 Encyklopedie a Pravidla</h2><div class="content encyclopedia">
       <h3 style="margin-top:0">🪪 Osobní profily a Tituly</h3>
-      <p>Kliknutím na jakékoliv jméno v tabulce otevřeš osobní kartu hráče. Tam najdeš jeho celoživotní statistiky a odemčené odznaky (levely). Pokud hráč vyhraje medaili po ukončení ligové sezóny, získá trvalý <b>Titul</b>. Ten si může nastavit v sekci Nastavení a bude mu svítit u jména. Odznaky a Tituly se nastavují zvlášť pro Ligu a pro Volnou hru.</p>
+      <p>Kliknutím na jakékoliv jméno v tabulce otevřeš osobní kartu hráče. Tam najdeš jeho celoživotní statistiky a odemčené odznaky (levely). Pokud hráč vyhraje medaili po ukončení ligové sezóny, získá trvalý <b>Titul</b>. Odznaky a Tituly se v Nastavení přidělují zvlášť pro Ligu a pro Volnou hru.</p>
 
       <h3>🏆 Celoživotní prestižní odznaky</h3>
       <ul class="rules-list muted">
-        <li>⚽ <b>Kanonýr:</b> Celkově 50, 150, 300 vstřelených gólů.</li>
-        <li>🏅 <b>Veterán:</b> Celkově 25, 100, 250 odehraných zápasů.</li>
+        <li>⚽ <b>Kanonýr:</b> Celkově 1000, 5000, 10000 vstřelených gólů.</li>
+        <li>🏅 <b>Veterán:</b> Celkově 100, 200, 500, 1000 odehraných zápasů.</li>
         <li>🥯 <b>Pekař:</b> Nadělení potupného "Kanára" 10:0.</li>
+        <li>☠️ <b>Osobní kat:</b> Porazit jednoho konkrétního hráče minimálně 10x.</li>
         <li>🧊 <b>Nervy ze železa:</b> Výhra tím nejtěsnějším rozdílem 10:9.</li>
         <li>🗡️ <b>Zabiják obrů:</b> Výhra (ve volné hře) nad hráčem, který má aktuálně o 150 bodů vyšší ELO než ty.</li>
-        <li>🪓 <b>Vymítač:</b> Podařilo se ti konečně porazit hráče, kterého máš momentálně vedeného jako svůj Kryptonit.</li>
+        <li>🪓 <b>Vymítač:</b> Podařilo se ti porazit hráče, kterého máš momentálně vedeného jako svůj Kryptonit.</li>
         <li>💎 <b>Elita:</b> Tvá celoživotní úspěšnost (Win Rate) je vyšší než 70 % (musíš mít min. 50 zápasů).</li>
         <li>🎯 <b>Zlatá kopačka:</b> Tvůj průměr gólů na zápas je nad 8.5 (min. 30 zápasů).</li>
         <li>⚡ <b>Polobůh:</b> Udržená epická série minimálně 10 výher v řadě bez jediného zaváhání.</li>
@@ -234,9 +235,6 @@ body.theme-free .modal-content {background:#1a0a00; border-color:var(--red);}
 
       <h3>⏱️ Zrychlený zápis a Časomíra</h3>
       <p>Při ukládání výsledku se spustí <b>30vteřinový odpočet</b> (proti překlepům). Lze ho zrušit tlačítkem <b>Zrušit</b>. Pokud jsi si jistý, můžeš využít modré tlačítko <b>Uložit ihned</b> a odpočet přeskočit.</p>
-
-      <h3>🔒 Ochrana PINem</h3>
-      <p>Aby nikdo omylem nesmazal data, jsou nebezpečné akce zabezpečeny tajným PIN kódem pro správce (smazání/úprava zápasu, mazání hráče, konec sezóny).</p>
     </div></div>
   </section>
 </div>
@@ -303,9 +301,7 @@ function toArray(obj) {
   return arr.filter(function(item) { return item !== null && item !== undefined; });
 }
 
-function genId() {
-  return Date.now() + Math.floor(Math.random() * 100000);
-}
+function genId() { return Date.now() + Math.floor(Math.random() * 100000); }
 
 db.ref('foosballLeague').on('value', function(snapshot) {
   const data = snapshot.val();
@@ -416,10 +412,11 @@ function getCalculatedProfile(targetId) {
     if(ownG > oppG) stats.against[oppId].wins++;
   });
 
-  let victim = "—", nemesis = "—", nemesisId = null;
+  let victim = "—", nemesis = "—", nemesisId = null, maxW = 0;
   let vRate = 50, nRate = 50; 
   Object.keys(stats.against).forEach(function(oppId) {
     let oppStats = stats.against[oppId];
+    if(oppStats.wins > maxW) maxW = oppStats.wins;
     if(oppStats.matches >= 3) {
       let wr = (oppStats.wins / oppStats.matches) * 100;
       if(wr > vRate) { vRate = wr; victim = getP(oppId).name; }
@@ -427,20 +424,26 @@ function getCalculatedProfile(targetId) {
     }
   });
 
+  stats.maxWinsAgainstOne = maxW;
   stats.victim = victim;
   stats.nemesis = nemesis;
   stats.exorcist = (nemesisId && stats.against[nemesisId].wins > 0) ? 1 : 0;
 
   let unlocked = [];
-  if(stats.goals >= 300) unlocked.push({val: '⚽ Kanonýr III'});
-  else if(stats.goals >= 150) unlocked.push({val: '⚽ Kanonýr II'});
-  else if(stats.goals >= 50) unlocked.push({val: '⚽ Kanonýr I'});
-  if(stats.played >= 250) unlocked.push({val: '🏅 Veterán III'});
-  else if(stats.played >= 100) unlocked.push({val: '🏅 Veterán II'});
-  else if(stats.played >= 25) unlocked.push({val: '🏅 Veterán I'});
+  if(stats.goals >= 10000) unlocked.push({val: '⚽ Kanonýr III'});
+  else if(stats.goals >= 5000) unlocked.push({val: '⚽ Kanonýr II'});
+  else if(stats.goals >= 1000) unlocked.push({val: '⚽ Kanonýr I'});
+  
+  if(stats.played >= 1000) unlocked.push({val: '🏅 Veterán IV'});
+  else if(stats.played >= 500) unlocked.push({val: '🏅 Veterán III'});
+  else if(stats.played >= 200) unlocked.push({val: '🏅 Veterán II'});
+  else if(stats.played >= 100) unlocked.push({val: '🏅 Veterán I'});
+  
   if(stats.kanars >= 15) unlocked.push({val: '🥯 Pekař III'});
   else if(stats.kanars >= 5) unlocked.push({val: '🥯 Pekař II'});
   else if(stats.kanars >= 1) unlocked.push({val: '🥯 Pekař I'});
+  
+  if(stats.maxWinsAgainstOne >= 10) unlocked.push({val: '☠️ Osobní kat'});
   if(stats.ice > 0) unlocked.push({val: '🧊 Nervy ze železa'});
   if(stats.giantSlayer > 0) unlocked.push({val: '🗡️ Zabiják obrů'});
   if(stats.exorcist > 0) unlocked.push({val: '🪓 Vymítač'});
@@ -690,7 +693,9 @@ document.querySelector('#saveLigaResult').addEventListener('click', function() {
   
   ligaInterval = setInterval(function() {
     timeLeft--;
-    if(timeLeft > 0) msg.innerHTML = `⏳ Zápis čeká... Odešle se automaticky za <b style="color:var(--yellow)">${timeLeft} s</b>`;
+    if(timeLeft > 0) {
+      msg.innerHTML = `⏳ Zápis čeká... Odešle se automaticky za <b style="color:var(--yellow)">${timeLeft} s</b>`;
+    }
   }, 1000);
 
   ligaTimer = setTimeout(function() {
@@ -703,8 +708,8 @@ document.querySelector('#saveLigaResult').addEventListener('click', function() {
     persist();
     document.querySelector('#ligaLoserGoals').value = '';
     msg.textContent = `✅ Uloženo: ${getP(ligaPendingSave.winnerId).name} 10:${ligaPendingSave.loserGoals} ${getP(ligaPendingSave.loserId).name}`;
-    cancelLigaEditState();
     resetLigaSaveUI();
+    cancelLigaEditState();
     setTimeout(function(){ msg.textContent=''; }, 4000);
   }, 30000);
 });
@@ -975,7 +980,7 @@ function renderArchive() {
   }).join('');
 }
 
-/* ==================== PROFIL HRÁČE ==================== */
+/* ==================== PROFIL HRÁČE (S TRACKERY) ==================== */
 window.openProfile = function(id) {
   let p = state.players.find(function(x){ return String(x.id) === String(id); });
   if(!p) return;
@@ -995,39 +1000,55 @@ window.openProfile = function(id) {
   document.getElementById('mVictim').textContent = stats.victim;
   document.getElementById('mNemesis').textContent = stats.nemesis;
 
-  let avail = [
-      {id:'kan', name:'Kanonýr', levels: [{req:50, n:'I'}, {req:150, n:'II'}, {req:300, n:'III'}], val: stats.goals, icon:'⚽'},
-      {id:'vet', name:'Veterán', levels: [{req:25, n:'I'}, {req:100, n:'II'}, {req:250, n:'III'}], val: stats.played, icon:'🏅'},
-      {id:'pek', name:'Pekař', levels: [{req:1, n:'I'}, {req:5, n:'II'}, {req:15, n:'III'}], val: stats.kanars, icon:'🥯'},
-      {id:'ice', name:'Nervy ze železa', reqText: 'Výhra 10:9', unlocked: stats.ice > 0, icon:'🧊'},
-      {id:'gia', name:'Zabiják obrů', reqText: 'Výhra nad hráčem s ELO +150', unlocked: stats.giantSlayer > 0, icon:'🗡️'},
-      {id:'exo', name:'Vymítač', reqText: 'Výhra nad Kryptonitem', unlocked: stats.exorcist > 0, icon:'🪓'},
-      {id:'eli', name:'Elita', reqText: 'WinRate >70 % (min 50 záp.)', unlocked: (stats.played>=50 && (stats.wins/stats.played)>=0.7), icon:'💎'},
-      {id:'sni', name:'Zlatá kopačka', reqText: 'Průměr >8.5 gólů (min 30 záp.)', unlocked: (stats.played>=30 && (stats.goals/stats.played)>=8.5), icon:'🎯'},
-      {id:'god', name:'Polobůh', reqText: '10 výher v řadě', unlocked: stats.maxStreak >= 10, icon:'⚡'}
+  let badgesUI = [
+    { id:'kan', name:'Kanonýr', icon:'⚽', val: stats.goals, levels: [1000, 5000, 10000], unit: 'gólů' },
+    { id:'vet', name:'Veterán', icon:'🏅', val: stats.played, levels: [100, 200, 500, 1000], unit: 'záp.' },
+    { id:'pek', name:'Pekař', icon:'🥯', val: stats.kanars, levels: [1, 5, 15], unit: 'Kanárů' },
+    { id:'kat', name:'Osobní kat', icon:'☠️', val: stats.maxWinsAgainstOne, levels: [10], unit: 'výher nad 1' },
+    { id:'god', name:'Polobůh', icon:'⚡', val: stats.maxStreak, levels: [10], unit: 'v řadě' },
+    { id:'ice', name:'Nervy ze železa', icon:'🧊', val: stats.ice, levels: [1], unit: 'x' },
+    { id:'gia', name:'Zabiják obrů', icon:'🗡️', val: stats.giantSlayer, levels: [1], unit: 'x' },
+    { id:'exo', name:'Vymítač', icon:'🪓', val: stats.exorcist, levels: [1], unit: 'x' }
   ];
 
   let bHTML = '';
-  avail.forEach(function(b) {
-      if(b.levels) {
-          let curLvl = null;
-          let nextLvl = b.levels[0];
-          for(let i=b.levels.length-1; i>=0; i--) {
-              if(b.val >= b.levels[i].req) { curLvl = b.levels[i]; nextLvl = b.levels[i+1]; break; }
-          }
-          if(curLvl) {
-              bHTML += `<div class="badge-prog">${b.icon} <div><b>${b.name} ${curLvl.n}</b><br><small>${curLvl.req}+ ${b.id==='kan'?'gólů':b.id==='vet'?'zápasů':'Kanárů'}</small></div></div>`;
-          } else {
-              bHTML += `<div class="badge-prog locked">${b.icon} <div><b>${b.name} I</b><br><small>Chybí ${nextLvl.req - b.val}</small></div></div>`;
-          }
+  const roman = ['I', 'II', 'III', 'IV'];
+
+  badgesUI.forEach(function(b) {
+      let achievedLvl = -1;
+      for(let i=b.levels.length-1; i>=0; i--) {
+          if(b.val >= b.levels[i]) { achievedLvl = i; break; }
+      }
+
+      let romanLvl = b.levels.length > 1 && achievedLvl >= 0 ? ' ' + roman[achievedLvl] : '';
+      let romanNext = b.levels.length > 1 ? ' ' + roman[achievedLvl + 1] : '';
+
+      if(achievedLvl === b.levels.length - 1) {
+          bHTML += `<div class="badge-prog">${b.icon} <div><b>${b.name}${romanLvl}</b><br><small style="color:var(--green)">Dokončeno (${b.val} ${b.unit})</small></div></div>`;
+      } else if (achievedLvl >= 0) {
+          let nextReq = b.levels[achievedLvl + 1];
+          bHTML += `<div class="badge-prog">${b.icon} <div><b>${b.name}${romanLvl}</b><br><small>Další úroveň${romanNext}: ${b.val} / ${nextReq} ${b.unit}</small></div></div>`;
       } else {
-          if(b.unlocked) {
-              bHTML += `<div class="badge-prog">${b.icon} <div><b>${b.name}</b><br><small>${b.reqText}</small></div></div>`;
-          } else {
-              bHTML += `<div class="badge-prog locked">${b.icon} <div><b>${b.name}</b><br><small>Zamčeno (${b.reqText})</small></div></div>`;
-          }
+          let nextReq = b.levels[0];
+          bHTML += `<div class="badge-prog locked">${b.icon} <div><b>${b.name}${b.levels.length > 1 ? ' I' : ''}</b><br><small>${b.val} / ${nextReq} ${b.unit}</small></div></div>`;
       }
   });
+
+  let elitaUnlocked = (stats.played >= 50 && (stats.wins/stats.played) >= 0.7);
+  let currentWR = stats.played > 0 ? Math.round((stats.wins/stats.played)*100) : 0;
+  if (elitaUnlocked) {
+      bHTML += `<div class="badge-prog">💎 <div><b>Elita</b><br><small style="color:var(--green)">Dokončeno (WR ${currentWR} %)</small></div></div>`;
+  } else {
+      bHTML += `<div class="badge-prog locked">💎 <div><b>Elita</b><br><small>WR ${currentWR} % / 70 % (zápasy ${stats.played} / 50)</small></div></div>`;
+  }
+
+  let currentAvg = stats.played > 0 ? (stats.goals/stats.played).toFixed(1) : "0.0";
+  let sniUnlocked = (stats.played >= 30 && (stats.goals/stats.played) >= 8.5);
+  if (sniUnlocked) {
+      bHTML += `<div class="badge-prog">🎯 <div><b>Zlatá kopačka</b><br><small style="color:var(--green)">Dokončeno (Průměr ${currentAvg})</small></div></div>`;
+  } else {
+      bHTML += `<div class="badge-prog locked">🎯 <div><b>Zlatá kopačka</b><br><small>Průměr ${currentAvg} / 8.5 (zápasy ${stats.played} / 30)</small></div></div>`;
+  }
 
   document.getElementById('mBadges').innerHTML = bHTML;
   document.getElementById('playerModal').classList.add('active');
