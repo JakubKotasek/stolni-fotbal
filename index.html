@@ -61,7 +61,8 @@ ul.rules-list{padding-left:20px;line-height:1.8;margin-top:0}ul.rules-list li{ma
 /* MODAL PROFILU */
 .modal-overlay {position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:999;padding:15px;opacity:0;pointer-events:none;transition:0.3s;}
 .modal-overlay.active {opacity:1;pointer-events:auto;}
-.modal-content {background:#0b1c30;border:1px solid var(--blue);border-radius:12px;width:100%;max-width:450px;max-height:90vh;overflow-y:auto;box-shadow:0 10px 30px rgba(0,0,0,0.8);position:relative;transform:translateY(20px);transition:0.3s;}
+/* Ochrana proti scroll chainingu: overscroll-behavior: contain; */
+.modal-content {background:#0b1c30;border:1px solid var(--blue);border-radius:12px;width:100%;max-width:450px;max-height:90vh;overflow-y:auto;overscroll-behavior:contain;box-shadow:0 10px 30px rgba(0,0,0,0.8);position:relative;transform:translateY(20px);transition:0.3s;}
 body.theme-free .modal-content {background:#1a0a00; border-color:var(--red);}
 .modal-overlay.active .modal-content {transform:translateY(0);}
 .modal-header {padding:20px;text-align:center;border-bottom:1px solid var(--line);background:rgba(0,0,0,0.2);}
@@ -620,7 +621,6 @@ function renderLiga(){
 
   document.querySelector('#standings').innerHTML=`<thead><tr><th>#</th><th>Hráč</th><th>Záp.</th><th>Výhry</th><th>Prohry</th><th>Skóre</th><th>Forma</th><th>Body</th></tr></thead><tbody>${stats.map((p,i)=>`<tr><td>${rankHtml(i)}</td><td>${formatName(p)}</td><td>${p.played}</td><td>${p.w}</td><td>${p.l}</td><td>${p.for}:${p.against}</td><td>${renderFormHtml(p.form)}</td><td><b>${p.points}</b></td></tr>`).join('')}</tbody>`;
   
-  // Tabulka jen pro aktuální formu
   document.querySelector('#statsTable').innerHTML=`<thead><tr><th>#</th><th>Hráč</th><th>Forma a Odznaky</th><th>Série</th><th>Skóre</th></tr></thead><tbody>${stats.map((p,i)=>`<tr><td>${rankHtml(i)}</td><td>${formatName(p)}</td><td>${p.badges}</td><td>${p.winStreak > 0 ? `<span style="color:var(--green)">+${p.winStreak}</span>` : p.loseStreak > 0 ? `<span style="color:var(--red)">-${p.loseStreak}</span>` : '0'}</td><td>${p.for}:${p.against}</td></tr>`).join('')}</tbody>`;
 
   let f = document.querySelector('#matchFilter').value;
@@ -735,7 +735,9 @@ document.querySelector('#saveLigaResult').addEventListener('click', () => {
 window.editLigaMatch = function(id) {
   let m = state.matches.find(x => String(x.id) === String(id));
   if(!m) return;
-  if(played(m)) { if(!checkPin()) return; }
+  if(played(m)) {
+    if(!checkPin()) return;
+  }
   
   if(document.activeElement) document.activeElement.blur(); 
 
@@ -784,6 +786,7 @@ window.clearLigaMatch = function(id) {
 document.querySelector('#cancelLigaEdit').addEventListener('click', cancelLigaEditState);
 function cancelLigaEditState() {
   clearTimeout(ligaTimer); clearInterval(ligaInterval); ligaPendingSave = null; resetLigaSaveUI(); document.querySelector('#ligaResultMsg').textContent = '';
+  
   editingLigaMatchId = null;
   document.querySelector('#ligaWinner').disabled = false;
   document.querySelector('#ligaLoser').disabled = false;
@@ -795,7 +798,7 @@ function cancelLigaEditState() {
 document.querySelector('#matchFilter').addEventListener('change', renderLiga);
 document.querySelector('#searchMatch').addEventListener('input', renderLiga);
 
-// ------ VOLNÁ HRA LOGIKA (S PREDIKCÍ Z CACHE) ------
+// ------ VOLNÁ HRA LOGIKA ------
 function updateFreePrediction() {
   let wId = String(document.querySelector('#freeWinner').value);
   let lId = String(document.querySelector('#freeLoser').value);
@@ -951,7 +954,6 @@ document.querySelector('#archiveSeasonBtn').addEventListener('click', () => {
     let stats = getLigaStats();
     let finalStandings = stats.map((p, i) => ({rank: i+1, name: p.name, points: p.points, w: p.w, l: p.l, score: `${p.for}:${p.against}`}));
     
-    // ROZDÁNÍ TITULŮ
     if(stats.length > 0) {
       let p1 = state.players.find(p=>String(p.id) === String(stats[0].id));
       if(p1) { p1.titles = p1.titles || []; p1.titles.push(`🥇 Zlatý mistr S${state.currentSeason}`); p1.activeTitle = p1.titles[p1.titles.length-1]; }
@@ -1004,7 +1006,7 @@ function renderArchive() {
   `).join('');
 }
 
-// ------ PROFIL HRÁČE (Z CACHE) ------
+// ------ PROFIL HRÁČE (Z CACHE A OCHRANA POZADÍ) ------
 window.openProfile = function(id) {
   let p = state.players.find(x => String(x.id) === String(id));
   if(!p) return;
@@ -1057,13 +1059,18 @@ window.openProfile = function(id) {
 
   document.getElementById('mBadges').innerHTML = bHTML;
   document.getElementById('playerModal').classList.add('active');
+  
+  // Zablokování scrollování hlavní stránky na pozadí profilu
+  document.body.style.overflow = 'hidden';
 };
 
 window.closeProfile = function() {
   document.getElementById('playerModal').classList.remove('active');
+  // Odblokování scrollování
+  document.body.style.overflow = '';
 };
 
-// ------ SPRÁVA HRÁČŮ A VÝSTAVKA (BEZPEČNÉ VYKRESLOVÁNÍ) ------
+// ------ SPRÁVA HRÁČŮ A VÝSTAVKA ------
 function renderPlayers(){
   if (document.activeElement && (document.activeElement.classList.contains('p-name') || document.activeElement.classList.contains('p-title') || document.activeElement.classList.contains('p-badge'))) {
     return;
