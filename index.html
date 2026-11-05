@@ -191,7 +191,8 @@ body.theme-free .modal-content {background:#1a0a00; border-color:var(--red);}
 <div id="wrapperShared" class="hidden">
   <section id="shared-players" class="hidden">
     <div class="panel"><h2>⚙️ Správa hráčů a Nastavení</h2><div class="content">
-      <p class="muted">Úpravy jmen a titulů se ukládají automaticky při psaní nebo opuštění políčka.</p>
+      <p class="muted small" style="margin-top:0">Jména se sdílí všude. <b>Výstavka (Titul a Odznak) se nastavuje odděleně!</b> Nyní upravuješ výstavku pro právě aktivní režim.</p>
+      <div id="playersModeIndicator" style="color:var(--yellow); font-weight:bold; margin-bottom:15px; font-size:14px; text-transform:uppercase;"></div>
       <div id="playerInputs"></div>
       <div class="actions" style="margin-top:15px;">
         <button class="btn primary" id="addPlayer">➕ Přidat dalšího hráče</button>
@@ -213,7 +214,7 @@ body.theme-free .modal-content {background:#1a0a00; border-color:var(--red);}
   <section id="shared-help" class="hidden">
     <div class="panel"><h2>💡 Encyklopedie a Pravidla</h2><div class="content encyclopedia">
       <h3 style="margin-top:0">🪪 Osobní profily a Tituly</h3>
-      <p>Kliknutím na jakékoliv jméno v tabulce otevřeš osobní kartu hráče. Tam najdeš jeho celoživotní statistiky a odemčené odznaky (levely). Pokud hráč vyhraje medaili po ukončení ligové sezóny, získá trvalý <b>Titul</b>. Ten si může nastavit v sekci Nastavení a bude mu svítit u jména.</p>
+      <p>Kliknutím na jakékoliv jméno v tabulce otevřeš osobní kartu hráče. Tam najdeš jeho celoživotní statistiky a odemčené odznaky (levely). Pokud hráč vyhraje medaili po ukončení ligové sezóny, získá trvalý <b>Titul</b>. Ten si může nastavit v sekci Nastavení a bude mu svítit u jména. Odznaky a Tituly se nastavují zvlášť pro Ligu a pro Volnou hru.</p>
 
       <h3>🏆 Celoživotní prestižní odznaky</h3>
       <ul class="rules-list muted">
@@ -290,6 +291,7 @@ let dataLoaded = false;
 let currentMode = 'liga';
 let editingLigaMatchId = null;
 
+let playerProfileCache = {};
 let ligaPendingSave = null, ligaTimer = null, ligaInterval = null;
 let freePendingSave = null, freeTimer = null, freeInterval = null;
 
@@ -301,7 +303,9 @@ function toArray(obj) {
   return arr.filter(function(item) { return item !== null && item !== undefined; });
 }
 
-function genId() { return Date.now() + Math.floor(Math.random() * 100000); }
+function genId() {
+  return Date.now() + Math.floor(Math.random() * 100000);
+}
 
 db.ref('foosballLeague').on('value', function(snapshot) {
   const data = snapshot.val();
@@ -473,6 +477,8 @@ function setMode(mode) {
     document.getElementById('wrapperLiga').classList.remove('hidden');
     document.querySelector('#navLiga button[data-target="liga-overview"]').click();
   }
+  
+  if(!document.getElementById('shared-players').classList.contains('hidden')) renderPlayers();
 }
 
 document.querySelectorAll('.subnav button').forEach(function(b) {
@@ -486,6 +492,7 @@ document.querySelectorAll('.subnav button').forEach(function(b) {
     if(targetId.startsWith('shared-')) {
       document.getElementById('wrapperShared').classList.remove('hidden');
       document.getElementById(targetId).classList.remove('hidden');
+      if (targetId === 'shared-players') renderPlayers();
     } else {
       document.getElementById('wrapperShared').classList.add('hidden');
       document.getElementById(targetId).classList.remove('hidden');
@@ -535,7 +542,13 @@ function formatName(p) {
 
 function getLigaStats() {
   let stats = state.players.map(function(p){
-    return {id:p.id, name:p.name, activeTitle:p.activeTitle, activeBadge:p.activeBadge, played:0, w:0, l:0, for:0, against:0, points:0, form:[], winStreak:0, loseStreak:0, kanar:false, badges:''};
+    return {
+      id:p.id, 
+      name:p.name, 
+      activeTitle: (p.activeTitleLiga !== undefined ? p.activeTitleLiga : p.activeTitle), 
+      activeBadge: (p.activeBadgeLiga !== undefined ? p.activeBadgeLiga : p.activeBadge), 
+      played:0, w:0, l:0, for:0, against:0, points:0, form:[], winStreak:0, loseStreak:0, kanar:false, badges:''
+    };
   });
 
   stats.forEach(function(p) {
@@ -775,27 +788,18 @@ document.querySelector('#freeWinner').addEventListener('change', updateFreePredi
 document.querySelector('#freeLoser').addEventListener('change', updateFreePrediction);
 
 function renderFree(){
-  let eloMap = {};
-  state.players.forEach(function(p){
-    eloMap[String(p.id)] = { id: p.id, name: p.name, activeTitle: p.activeTitle, activeBadge: p.activeBadge, elo: 1000, played: 0, w: 0, l: 0 };
+  let fStats = state.players.map(function(p) {
+    let prof = getCalculatedProfile(p.id);
+    let stats = prof ? prof.fullStats : { played:0, wins:0 };
+    return {
+      id: p.id, 
+      name: p.name, 
+      activeTitle: (p.activeTitleFree !== undefined ? p.activeTitleFree : p.activeTitle), 
+      activeBadge: (p.activeBadgeFree !== undefined ? p.activeBadgeFree : p.activeBadge),
+      played: stats.played, w: stats.wins, l: stats.played - stats.wins, elo: (prof ? prof.elo : 1000)
+    };
   });
 
-  let sortedFree = [...state.freeMatches].sort(function(a,b){ return Number(a.id) - Number(b.id); });
-  sortedFree.forEach(function(m) {
-    let pA = eloMap[String(m.a)], pB = eloMap[String(m.b)];
-    if(!pA || !pB) return;
-    pA.played++; pB.played++;
-    let wA = Number(m.ga) > Number(m.gb) ? 1 : 0;
-    let wB = Number(m.gb) > Number(m.ga) ? 1 : 0;
-    if(wA){ pA.w++; pB.l++; } else { pB.w++; pA.l++; }
-
-    let expA = 1 / (1 + Math.pow(10, (pB.elo - pA.elo) / 400));
-    let expB = 1 / (1 + Math.pow(10, (pA.elo - pB.elo) / 400));
-    pA.elo = Math.round(pA.elo + 32 * (wA - expA));
-    pB.elo = Math.round(pB.elo + 32 * (wB - expB));
-  });
-
-  let fStats = Object.values(eloMap);
   fStats.sort(function(a,b){ return b.elo - a.elo || b.w - a.w; });
   let rankHtml = function(i){ return `<span class="rank ${i===0?'r1':i===1?'r2':i===2?'r3':''}">${i+1}</span>`; };
   
@@ -926,7 +930,7 @@ document.querySelector('#archiveSeasonBtn').addEventListener('click', function()
     
     if(stats.length > 0) {
       let p1 = state.players.find(function(p){ return String(p.id) === String(stats[0].id); });
-      if(p1) { p1.titles = p1.titles || []; p1.titles.push(`🥇 Zlatý mistr S${state.currentSeason}`); p1.activeTitle = p1.titles[p1.titles.length-1]; }
+      if(p1) { p1.titles = p1.titles || []; p1.titles.push(`🥇 Zlatý mistr S${state.currentSeason}`); p1.activeTitleLiga = p1.titles[p1.titles.length-1]; }
     }
     if(stats.length > 1) {
       let p2 = state.players.find(function(p){ return String(p.id) === String(stats[1].id); });
@@ -978,8 +982,12 @@ window.openProfile = function(id) {
   let profile = getCalculatedProfile(id);
   let stats = profile.fullStats;
 
+  let displayTitle = '';
+  if (currentMode === 'liga') displayTitle = p.activeTitleLiga !== undefined ? p.activeTitleLiga : p.activeTitle;
+  else displayTitle = p.activeTitleFree !== undefined ? p.activeTitleFree : p.activeTitle;
+
   document.getElementById('mName').textContent = p.name;
-  document.getElementById('mTitle').textContent = p.activeTitle || '';
+  document.getElementById('mTitle').textContent = displayTitle || '';
   document.getElementById('mPlayed').textContent = stats.played;
   document.getElementById('mWinrate').textContent = stats.played > 0 ? Math.round((stats.wins / stats.played)*100) + ' %' : '0 %';
   document.getElementById('mGoals').textContent = stats.goals;
@@ -1034,14 +1042,20 @@ window.closeProfile = function() {
 /* ==================== SPRÁVA HRÁČŮ ==================== */
 function renderPlayers(){
   let activeEl = document.activeElement;
-  let activeId = activeEl ? activeEl.dataset.id : null;
   let isEditing = activeEl && (activeEl.classList.contains('p-name') || activeEl.classList.contains('p-title') || activeEl.classList.contains('p-badge'));
   if (isEditing) return;
+
+  let isLiga = (currentMode === 'liga');
+  document.querySelector('#playersModeIndicator').innerHTML = `Nyní upravuješ výstavku pro: <b>${isLiga ? '🏆 LIGU' : '⚔️ VOLNOU HRU'}</b>`;
 
   document.querySelector('#playerInputs').innerHTML = state.players.map(function(p) {
     let profile = getCalculatedProfile(p.id);
     let badges = profile ? profile.unlockedBadges : [];
-    let badgeOpts = badges.map(function(b){ return `<option value="${esc(b.val)}" ${p.activeBadge===b.val?'selected':''}>${esc(b.val)}</option>`; }).join('');
+    
+    let curTitle = isLiga ? (p.activeTitleLiga !== undefined ? p.activeTitleLiga : p.activeTitle) : (p.activeTitleFree !== undefined ? p.activeTitleFree : p.activeTitle);
+    let curBadge = isLiga ? (p.activeBadgeLiga !== undefined ? p.activeBadgeLiga : p.activeBadge) : (p.activeBadgeFree !== undefined ? p.activeBadgeFree : p.activeBadge);
+
+    let badgeOpts = badges.map(function(b){ return `<option value="${esc(b.val)}" ${curBadge===b.val?'selected':''}>${esc(b.val)}</option>`; }).join('');
     
     return `
     <div class="player-row">
@@ -1049,7 +1063,7 @@ function renderPlayers(){
       ${p.titles && p.titles.length > 0 ? `
         <select class="p-title" data-id="${p.id}">
           <option value="">Bez titulu</option>
-          ${p.titles.map(function(t){ return `<option value="${esc(t)}" ${p.activeTitle===t?'selected':''}>${esc(t)}</option>`; }).join('')}
+          ${p.titles.map(function(t){ return `<option value="${esc(t)}" ${curTitle===t?'selected':''}>${esc(t)}</option>`; }).join('')}
         </select>
       ` : ''}
       <select class="p-badge" data-id="${p.id}">
@@ -1081,11 +1095,6 @@ document.querySelector('#addPlayer').addEventListener('click', function(){
   state.players.push({ id: newId, name: `Hráč ${state.players.length+1}` });
   updateFixtures();
   persist();
-  setTimeout(function() {
-    renderPlayers();
-    let inp = document.querySelector(`input[data-id="${newId}"]`);
-    if(inp) { inp.focus(); inp.select(); }
-  }, 100);
 });
 
 document.querySelector('#playerInputs').addEventListener('input', function(e) {
@@ -1098,12 +1107,17 @@ document.querySelector('#playerInputs').addEventListener('input', function(e) {
 document.querySelector('#playerInputs').addEventListener('change', function(e) {
   let p = state.players.find(function(x){ return String(x.id)===String(e.target.dataset.id); });
   if(p) {
+    let isLiga = currentMode === 'liga';
     if(e.target.classList.contains('p-name')) p.name = e.target.value.trim() || p.name;
-    if(e.target.classList.contains('p-title')) p.activeTitle = e.target.value;
-    if(e.target.classList.contains('p-badge')) p.activeBadge = e.target.value;
+    if(e.target.classList.contains('p-title')) {
+      if (isLiga) p.activeTitleLiga = e.target.value; else p.activeTitleFree = e.target.value;
+    }
+    if(e.target.classList.contains('p-badge')) {
+      if (isLiga) p.activeBadgeLiga = e.target.value; else p.activeBadgeFree = e.target.value;
+    }
     persist();
     let msg = document.querySelector('#playersMsg');
-    msg.textContent = '✅ Nastavení uloženo';
+    msg.textContent = '✅ Nastavení uloženo pro ' + (isLiga ? 'Ligu' : 'Volnou hru');
     setTimeout(function(){ msg.textContent=''; }, 2500);
   }
 });
