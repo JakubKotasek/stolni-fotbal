@@ -367,7 +367,9 @@ function loserPoints(g){return g<=4?0:g<=7?1:g<=9?2:0;}
 function getCalculatedProfile(targetId) {
   targetId = String(targetId);
   let eloMap = {};
-  state.players.forEach(function(p){ eloMap[String(p.id)] = { elo: 1000, giantSlayer: 0 }; });
+  state.players.forEach(function(p){ 
+      eloMap[String(p.id)] = { elo: 1000, giantSlayer: 0, freePlayed: 0, freeWins: 0 }; 
+  });
   
   let sortedFree = [...state.freeMatches].sort(function(a,b){ return Number(a.id) - Number(b.id); });
   sortedFree.forEach(function(m) {
@@ -375,6 +377,12 @@ function getCalculatedProfile(targetId) {
     if(!pA || !pB) return;
     let wA = Number(m.ga) > Number(m.gb) ? 1 : 0;
     let wB = Number(m.gb) > Number(m.ga) ? 1 : 0;
+    
+    pA.freePlayed++; 
+    pB.freePlayed++;
+    if (wA) pA.freeWins++;
+    if (wB) pB.freeWins++;
+    
     if (wA && (pB.elo - pA.elo >= 150)) pA.giantSlayer++;
     if (wB && (pA.elo - pB.elo >= 150)) pB.giantSlayer++;
     let expA = 1 / (1 + Math.pow(10, (pB.elo - pA.elo) / 400));
@@ -451,7 +459,13 @@ function getCalculatedProfile(targetId) {
   if(stats.played >= 30 && (stats.goals/stats.played) >= 8.5) unlocked.push({val: '🎯 Zlatá kopačka'});
   if(stats.maxStreak >= 10) unlocked.push({val: '⚡ Polobůh'});
 
-  return { fullStats: stats, unlockedBadges: unlocked, elo: (eloMap[targetId] ? eloMap[targetId].elo : 1000) };
+  return { 
+    fullStats: stats, 
+    unlockedBadges: unlocked, 
+    elo: (eloMap[targetId] ? eloMap[targetId].elo : 1000),
+    freePlayed: (eloMap[targetId] ? eloMap[targetId].freePlayed : 0),
+    freeWins: (eloMap[targetId] ? eloMap[targetId].freeWins : 0)
+  };
 }
 
 /* ==================== PŘEPÍNÁNÍ REŽIMŮ ==================== */
@@ -507,6 +521,11 @@ document.querySelectorAll('.subnav button').forEach(function(b) {
 function renderAll(){
   if(!dataLoaded) return;
   if(currentMode === 'liga') document.getElementById('mainTitle').textContent = `Stolní fotbal – LIGA (Sezóna ${state.currentSeason})`;
+  
+  playerProfileCache = {};
+  state.players.forEach(function(p){
+     playerProfileCache[String(p.id)] = getCalculatedProfile(p.id);
+  });
   
   renderSelects();
   renderLiga();
@@ -780,8 +799,8 @@ function updateFreePrediction() {
   let el = document.querySelector('#freePrediction');
   if(!wId || !lId || wId === lId) { el.innerHTML = ''; return; }
   
-  let wProf = getCalculatedProfile(wId);
-  let lProf = getCalculatedProfile(lId);
+  let wProf = playerProfileCache[wId];
+  let lProf = playerProfileCache[lId];
   
   if(wProf && lProf) {
       let probW = 1 / (1 + Math.pow(10, (lProf.elo - wProf.elo) / 400));
@@ -794,14 +813,17 @@ document.querySelector('#freeLoser').addEventListener('change', updateFreePredic
 
 function renderFree(){
   let fStats = state.players.map(function(p) {
-    let prof = getCalculatedProfile(p.id);
-    let stats = prof ? prof.fullStats : { played:0, wins:0 };
+    let prof = playerProfileCache[String(p.id)];
     return {
       id: p.id, 
       name: p.name, 
       activeTitle: (p.activeTitleFree !== undefined ? p.activeTitleFree : p.activeTitle), 
       activeBadge: (p.activeBadgeFree !== undefined ? p.activeBadgeFree : p.activeBadge),
-      played: stats.played, w: stats.wins, l: stats.played - stats.wins, elo: (prof ? prof.elo : 1000)
+      // Správné navázání proměnných pro zobrazení
+      played: prof ? prof.freePlayed : 0, 
+      w: prof ? prof.freeWins : 0, 
+      l: (prof ? prof.freePlayed : 0) - (prof ? prof.freeWins : 0), 
+      elo: (prof ? prof.elo : 1000)
     };
   });
 
@@ -984,7 +1006,8 @@ function renderArchive() {
 window.openProfile = function(id) {
   let p = state.players.find(function(x){ return String(x.id) === String(id); });
   if(!p) return;
-  let profile = getCalculatedProfile(id);
+  let profile = playerProfileCache[String(id)];
+  if(!profile) return;
   let stats = profile.fullStats;
 
   let displayTitle = '';
@@ -1070,7 +1093,7 @@ function renderPlayers(){
   document.querySelector('#playersModeIndicator').innerHTML = `Nyní upravuješ výstavku pro: <b>${isLiga ? '🏆 LIGU' : '⚔️ VOLNOU HRU'}</b>`;
 
   document.querySelector('#playerInputs').innerHTML = state.players.map(function(p) {
-    let profile = getCalculatedProfile(p.id);
+    let profile = playerProfileCache[String(p.id)];
     let badges = profile ? profile.unlockedBadges : [];
     
     let curTitle = isLiga ? (p.activeTitleLiga !== undefined ? p.activeTitleLiga : p.activeTitle) : (p.activeTitleFree !== undefined ? p.activeTitleFree : p.activeTitle);
