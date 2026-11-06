@@ -235,6 +235,17 @@ body.theme-free .modal-content {background:#1a0a00; border-color:var(--red);}
 
       <h3>⏱️ Zrychlený zápis a Časomíra</h3>
       <p>Při ukládání výsledku se spustí <b>30vteřinový odpočet</b> (proti překlepům). Lze ho zrušit tlačítkem <b>Zrušit</b>. Pokud jsi si jistý, můžeš využít modré tlačítko <b>Uložit ihned</b> a odpočet přeskočit.</p>
+
+      <h3>🔒 Ochrana PINem</h3>
+      <p>Aby nikdo omylem nesmazal data, jsou nebezpečné akce zabezpečeny tajným PIN kódem pro správce (smazání/úprava zápasu, mazání hráče, konec sezóny).</p>
+
+      <h3>📖 Oficiální pravidla fotbálku</h3>
+      <ul class="rules-list">
+        <li>V Lize hraje každý s každým přesně <b>dva zápasy</b>.</li>
+        <li>Ten, kdo dostal gól, má právo <b>vhazovat míček</b> zpět do hry.</li>
+        <li><b>Neplatí přímý gól po vhození.</b> Před střelou na bránu musí proběhnout další dotyk stejného týmu.</li>
+        <li>Zápas se hraje do <b>10 gólů</b>. Vítěz má 3 body, prohra 8-9 gólů je za 2 body, prohra 5-7 gólů za 1 bod.</li>
+      </ul>
     </div></div>
   </section>
 </div>
@@ -623,7 +634,8 @@ function renderLiga(){
   let renderFormHtml = function(arr){ return arr.slice(-5).map(function(r){ return `<span class="dot ${r}"></span>`; }).join(''); };
   let rankHtml = function(i){ return `<span class="rank ${i===0?'r1':i===1?'r2':i===2?'r3':''}">${i+1}</span>`; };
 
-  document.querySelector('#standings').innerHTML=`<thead><tr><th>#</th><th>Hráč</th><th>Záp.</th><th>Výhry</th><th>Prohry</th><th>Skóre</th><th>Forma</th><th>Body</th></tr></thead><tbody>${stats.map(function(p,i){ return `<tr><td>${rankHtml(i)}</td><td>${formatName(p)}</td><td>${p.played}</td><td>${p.w}</td><td>${p.l}</td><td>${p.for}:${p.against}</td><td>${renderFormHtml(p.form)}</td><td><b>${p.points}</b></td></tr>`; }).join('')}</tbody>`;
+  // UPRAVENÉ POŘADÍ: Body jsou hned za jménem a žlutě zvýrazněné
+  document.querySelector('#standings').innerHTML=`<thead><tr><th>#</th><th>Hráč</th><th>Body</th><th>Záp.</th><th>Výhry</th><th>Prohry</th><th>Skóre</th><th>Forma</th></tr></thead><tbody>${stats.map(function(p,i){ return `<tr><td>${rankHtml(i)}</td><td>${formatName(p)}</td><td style="color:var(--yellow);font-size:16px;"><b>${p.points}</b></td><td>${p.played}</td><td>${p.w}</td><td>${p.l}</td><td>${p.for}:${p.against}</td><td>${renderFormHtml(p.form)}</td></tr>`; }).join('')}</tbody>`;
 
   let f = document.querySelector('#matchFilter').value;
   let q = document.querySelector('#searchMatch').value.toLowerCase();
@@ -819,7 +831,6 @@ function renderFree(){
       name: p.name, 
       activeTitle: (p.activeTitleFree !== undefined ? p.activeTitleFree : p.activeTitle), 
       activeBadge: (p.activeBadgeFree !== undefined ? p.activeBadgeFree : p.activeBadge),
-      // Správné navázání proměnných pro zobrazení
       played: prof ? prof.freePlayed : 0, 
       w: prof ? prof.freeWins : 0, 
       l: (prof ? prof.freePlayed : 0) - (prof ? prof.freeWins : 0), 
